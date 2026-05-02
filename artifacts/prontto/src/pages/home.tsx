@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import {
   motion,
   AnimatePresence,
@@ -333,6 +333,37 @@ const SCENES = [
   },
 ];
 
+// ─── Scroll-event FadeIn (no IntersectionObserver — works in all iframes) ────
+type FadeDir = "up" | "left" | "right" | "none";
+function FadeIn({
+  children, className, delay = 0, dir = "up",
+}: { children: ReactNode; className?: string; delay?: number; dir?: FadeDir }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => {
+      if (el.getBoundingClientRect().top < window.innerHeight + 80) setShow(true);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    return () => window.removeEventListener("scroll", check);
+  }, []);
+  const hidden: Record<string, number> =
+    dir === "left" ? { opacity: 0, x: -40, y: 0 }
+    : dir === "right" ? { opacity: 0, x: 40, y: 0 }
+    : dir === "none" ? { opacity: 0, x: 0, y: 0 }
+    : { opacity: 0, x: 0, y: 36 };
+  const visible = { opacity: 1, x: 0, y: 0 };
+  return (
+    <motion.div ref={ref} initial={hidden} animate={show ? visible : hidden}
+      transition={{ duration: 0.65, delay, ease: "easeOut" }} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
 // Simple piecewise-linear interpolation — no MotionValue needed
 function lerp(v: number, input: number[], output: number[]): number {
   if (v <= input[0]) return output[0];
@@ -530,7 +561,7 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col font-sans text-secondary overflow-x-hidden">
+    <div className="min-h-[100dvh] flex flex-col font-sans text-secondary" style={{ overflowX: "clip" }}>
 
       {/* ── HEADER ── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-white/95 backdrop-blur-md shadow-sm py-3" : "bg-transparent py-5"}`}>
@@ -653,25 +684,17 @@ export function Home() {
         {/* ── SERVICES ── */}
         <section id="servicos" className="py-28 bg-background">
           <div className="container mx-auto px-4 md:px-6">
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.7 }}
-              className="text-center max-w-2xl mx-auto mb-16">
+            <FadeIn className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-primary text-sm font-semibold uppercase tracking-widest">Categorias</span>
               <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4 text-secondary">Serviços para todas as suas necessidades</h2>
               <p className="text-lg text-muted-foreground">De pequenos reparos a grandes projetos, encontre o profissional ideal.</p>
-            </motion.div>
+            </FadeIn>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-              {services.map((service, index) => {
-                const row = Math.floor(index / 4);
-                const col = index % 4;
-                return (
-                  <motion.div key={service.name}
-                    initial={{ opacity: 0, y: 40 + row * 10, x: (col - 1.5) * 10 }}
-                    whileInView={{ opacity: 1, y: 0, x: 0 }}
-                    viewport={{ once: true, amount: 0 }}
-                    transition={{ duration: 0.55, delay: index * 0.07, ease: "easeOut" }}
-                    whileHover={{ y: -6, transition: { duration: 0.2 } }}>
-                    <Card className={`group cursor-pointer border-border/40 bg-white hover:shadow-xl transition-all duration-300 ${service.border}`}>
+              {services.map((service, index) => (
+                <FadeIn key={service.name} delay={index * 0.06}>
+                  <motion.div whileHover={{ y: -6, transition: { duration: 0.2 } }} className="h-full">
+                    <Card className={`group cursor-pointer border-border/40 bg-white hover:shadow-xl transition-all duration-300 h-full ${service.border}`}>
                       <CardContent className="p-6 flex flex-col items-center text-center gap-4">
                         <motion.div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${service.color}`}
                           whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }} transition={{ duration: 0.4 }}>
@@ -681,15 +704,15 @@ export function Home() {
                       </CardContent>
                     </Card>
                   </motion.div>
-                );
-              })}
+                </FadeIn>
+              ))}
             </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.4 }} className="mt-12 text-center">
+            <FadeIn className="mt-12 text-center" delay={0.3}>
               <Button variant="outline" className="rounded-[10px] gap-2 hover:border-primary hover:text-primary transition-colors">
                 Ver todas as categorias <ArrowRight size={16} />
               </Button>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -697,32 +720,25 @@ export function Home() {
         <section id="como-funciona" className="py-28 bg-secondary relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
           <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.7 }}
-              className="text-center max-w-2xl mx-auto mb-20">
+            <FadeIn className="text-center max-w-2xl mx-auto mb-20">
               <span className="text-primary text-sm font-semibold uppercase tracking-widest">Como Funciona</span>
               <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4 text-white">Simples, rápido e seguro.</h2>
               <p className="text-lg text-white/60">Contratar um profissional nunca foi tão fácil. São apenas três passos.</p>
-            </motion.div>
+            </FadeIn>
 
             <div className="grid md:grid-cols-3 gap-8 relative">
-              <div className="hidden md:block absolute top-[52px] left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-[2px] overflow-hidden">
-                <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
-                  className="h-full bg-gradient-to-r from-primary/40 via-primary to-primary/40 origin-left" />
+              <div className="hidden md:block absolute top-[52px] left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-[2px] bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
               </div>
               {steps.map((step, index) => (
-                <motion.div key={step.title}
-                  initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }}
-                  transition={{ duration: 0.65, delay: index * 0.2, ease: "easeOut" }}
-                  className="relative z-10 flex flex-col items-center text-center gap-5">
-                  <motion.div className="w-24 h-24 rounded-full bg-white/5 border-2 border-white/10 flex items-center justify-center text-primary relative"
-                    whileInView={{ borderColor: ["rgba(255,255,255,0.1)", "rgba(249,112,21,0.6)", "rgba(255,255,255,0.2)"] }}
-                    transition={{ duration: 1.5, delay: index * 0.25 + 0.4 }} viewport={{ once: true }}>
+                <FadeIn key={step.title} delay={index * 0.18} className="relative z-10 flex flex-col items-center text-center gap-5">
+                  <div className="w-24 h-24 rounded-full bg-white/5 border-2 border-primary/40 flex items-center justify-center text-primary relative">
                     <step.icon size={36} />
                     <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">{step.number}</span>
-                  </motion.div>
+                  </div>
                   <h3 className="text-xl font-bold text-white">{step.title}</h3>
                   <p className="text-white/55 leading-relaxed max-w-[260px]">{step.desc}</p>
-                </motion.div>
+                </FadeIn>
               ))}
             </div>
           </div>
@@ -736,40 +752,35 @@ export function Home() {
             </svg>
           </div>
           <div className="container mx-auto px-4 md:px-6 pt-10">
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.7 }}
-              className="text-center max-w-2xl mx-auto mb-16">
+            <FadeIn className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-primary text-sm font-semibold uppercase tracking-widest">Depoimentos</span>
               <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4 text-secondary">Quem usa, recomenda.</h2>
               <p className="text-lg text-muted-foreground">Milhares de clientes satisfeitos com os serviços prestados pela nossa comunidade.</p>
-            </motion.div>
+            </FadeIn>
             <div className="grid md:grid-cols-3 gap-6">
               {reviews.map((review, index) => (
-                <motion.div key={index}
-                  initial={{ opacity: 0, x: index === 0 ? -40 : index === 2 ? 40 : 0, y: index === 1 ? 40 : 0 }}
-                  whileInView={{ opacity: 1, x: 0, y: 0 }} viewport={{ once: true, amount: 0 }}
-                  transition={{ duration: 0.65, delay: index * 0.15, ease: "easeOut" }}
-                  whileHover={{ y: -6, transition: { duration: 0.2 } }}>
-                  <Card className="h-full bg-white border-border/40 hover:shadow-xl hover:border-primary/20 transition-all duration-300">
-                    <CardContent className="p-8 flex flex-col gap-5">
-                      <div className="flex gap-1">
-                        {Array.from({ length: review.rating }).map((_, i) => (
-                          <motion.div key={i} initial={{ opacity: 0, scale: 0 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-                            transition={{ delay: index * 0.15 + i * 0.08 + 0.3, type: "spring", stiffness: 300 }}>
-                            <Star size={16} className="text-primary fill-primary" />
-                          </motion.div>
-                        ))}
-                      </div>
-                      <p className="text-secondary/75 leading-relaxed flex-1 text-[15px]">"{review.text}"</p>
-                      <div className="flex items-center gap-3 pt-2 border-t border-border/50">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center font-bold text-primary text-sm shrink-0">{review.name.charAt(0)}</div>
-                        <div>
-                          <p className="font-bold text-sm text-secondary">{review.name}</p>
-                          <p className="text-xs text-muted-foreground">{review.city}</p>
+                <FadeIn key={index} delay={index * 0.15}
+                  dir={index === 0 ? "left" : index === 2 ? "right" : "up"}>
+                  <motion.div whileHover={{ y: -6, transition: { duration: 0.2 } }} className="h-full">
+                    <Card className="h-full bg-white border-border/40 hover:shadow-xl hover:border-primary/20 transition-all duration-300">
+                      <CardContent className="p-8 flex flex-col gap-5">
+                        <div className="flex gap-1">
+                          {Array.from({ length: review.rating }).map((_, i) => (
+                            <Star key={i} size={16} className="text-primary fill-primary" />
+                          ))}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                        <p className="text-secondary/75 leading-relaxed flex-1 text-[15px]">"{review.text}"</p>
+                        <div className="flex items-center gap-3 pt-2 border-t border-border/50">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center font-bold text-primary text-sm shrink-0">{review.name.charAt(0)}</div>
+                          <div>
+                            <p className="font-bold text-sm text-secondary">{review.name}</p>
+                            <p className="text-xs text-muted-foreground">{review.city}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </FadeIn>
               ))}
             </div>
           </div>
@@ -782,8 +793,7 @@ export function Home() {
           <motion.div animate={{ rotate: -360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
             className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full border border-white/10 opacity-30" />
           <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 30 }} whileInView={{ opacity: 1, scale: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}
-              className="max-w-4xl mx-auto text-center flex flex-col items-center gap-8">
+            <FadeIn dir="none" className="max-w-4xl mx-auto text-center flex flex-col items-center gap-8">
               <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 text-white text-sm font-semibold">Para Prestadores</span>
               <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">É profissional?<br />Aumente sua renda!</h2>
               <p className="text-lg md:text-xl text-white/85 max-w-2xl leading-relaxed">
@@ -806,7 +816,7 @@ export function Home() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
       </main>
@@ -814,8 +824,7 @@ export function Home() {
       {/* ── FOOTER ── */}
       <footer className="bg-secondary pt-20 pb-10 text-white/60">
         <div className="container mx-auto px-4 md:px-6">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-            className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-16">
+          <FadeIn className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-16">
             <div className="col-span-2 lg:col-span-2">
               <span className="text-3xl font-extrabold tracking-tight text-white block mb-5">PRON<span className="text-primary">TTO</span></span>
               <p className="mb-6 max-w-sm leading-relaxed">O marketplace de serviços domésticos que conecta você aos melhores profissionais da sua região.</p>
@@ -832,7 +841,7 @@ export function Home() {
                 </ul>
               </div>
             ))}
-          </motion.div>
+          </FadeIn>
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm">&copy; {new Date().getFullYear()} Prontto. Todos os direitos reservados.</p>
             <div className="flex items-center gap-3">
