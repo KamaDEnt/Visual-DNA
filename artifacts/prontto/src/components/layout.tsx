@@ -58,9 +58,15 @@ export function Layout({ children }: { children: ReactNode }) {
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.15 }}
             className="hidden md:flex items-center gap-3">
-            <Button variant="outline" className={`rounded-[10px] text-sm ${scrolled ? "border-border text-secondary" : "border-white/30 text-white hover:bg-white/10"}`}>Minha Área</Button>
-            <Button variant="ghost" className={`rounded-[10px] text-sm ${scrolled ? "text-secondary" : "text-white hover:bg-white/10"}`}>Entrar</Button>
-            <Button className="rounded-[10px] text-sm bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30">Cadastre-se</Button>
+            <Link href="/minha-area">
+              <Button variant="outline" className={`rounded-[10px] text-sm cursor-pointer ${scrolled ? "border-border text-secondary" : "border-white/30 text-white hover:bg-white/10"}`}>Minha Área</Button>
+            </Link>
+            <Link href="/entrar">
+              <Button variant="ghost" className={`rounded-[10px] text-sm cursor-pointer ${scrolled ? "text-secondary" : "text-white hover:bg-white/10"}`}>Entrar</Button>
+            </Link>
+            <Link href="/cadastrar">
+              <Button className="rounded-[10px] text-sm bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30 cursor-pointer">Cadastre-se</Button>
+            </Link>
           </motion.div>
 
           <button className={`md:hidden p-2 rounded-md ${scrolled ? "text-secondary" : "text-white"}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>

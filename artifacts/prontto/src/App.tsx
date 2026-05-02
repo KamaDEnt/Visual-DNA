@@ -6,6 +6,9 @@ import { Home } from "@/pages/home";
 import { Servicos } from "@/pages/servicos";
 import { ComoFunciona } from "@/pages/como-funciona";
 import { ParaPrestadores } from "@/pages/para-prestadores";
+import { Entrar } from "@/pages/entrar";
+import { Cadastrar } from "@/pages/cadastrar";
+import { MinhaArea } from "@/pages/minha-area";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -17,6 +20,9 @@ function Router() {
       <Route path="/servicos" component={Servicos} />
       <Route path="/como-funciona" component={ComoFunciona} />
       <Route path="/para-prestadores" component={ParaPrestadores} />
+      <Route path="/entrar" component={Entrar} />
+      <Route path="/cadastrar" component={Cadastrar} />
+      <Route path="/minha-area" component={MinhaArea} />
       <Route component={NotFound} />
     </Switch>
   );
