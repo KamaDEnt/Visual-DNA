@@ -372,26 +372,28 @@ function ScrollMovie() {
     target: containerRef,
     offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 55, damping: 20, restDelta: 0.001 });
+  // Use scrollYProgress directly — a spring would lag too far behind and never
+  // reach the scene transition thresholds when the user scrolls normally.
+  const p = scrollYProgress;
 
   // Scene illustration opacities — scene 1 starts at full opacity immediately
-  const s1O = useTransform(smooth, [0, 0.22, 0.28], [1, 1, 0]);
-  const s2O = useTransform(smooth, [0.22, 0.28, 0.47, 0.53], [0, 1, 1, 0]);
-  const s3O = useTransform(smooth, [0.47, 0.53, 0.72, 0.78], [0, 1, 1, 0]);
-  const s4O = useTransform(smooth, [0.72, 0.78, 1], [0, 1, 1]);
+  const s1O = useTransform(p, [0, 0.22, 0.28], [1, 1, 0]);
+  const s2O = useTransform(p, [0.22, 0.28, 0.47, 0.53], [0, 1, 1, 0]);
+  const s3O = useTransform(p, [0.47, 0.53, 0.72, 0.78], [0, 1, 1, 0]);
+  const s4O = useTransform(p, [0.72, 0.78, 1], [0, 1, 1]);
 
   // Progress bar
-  const barScaleX = useTransform(smooth, [0, 1], [0, 1]);
+  const barScaleX = useTransform(p, [0, 1], [0, 1]);
 
   // Dot fills (explicit — hooks cannot be inside .map)
-  const dot0 = useTransform(smooth, [SCENES[0].range[0], SCENES[0].range[1]], [0, 1]);
-  const dot1 = useTransform(smooth, [SCENES[1].range[0], SCENES[1].range[1]], [0, 1]);
-  const dot2 = useTransform(smooth, [SCENES[2].range[0], SCENES[2].range[1]], [0, 1]);
-  const dot3 = useTransform(smooth, [SCENES[3].range[0], SCENES[3].range[1]], [0, 1]);
+  const dot0 = useTransform(p, [SCENES[0].range[0], SCENES[0].range[1]], [0, 1]);
+  const dot1 = useTransform(p, [SCENES[1].range[0], SCENES[1].range[1]], [0, 1]);
+  const dot2 = useTransform(p, [SCENES[2].range[0], SCENES[2].range[1]], [0, 1]);
+  const dot3 = useTransform(p, [SCENES[3].range[0], SCENES[3].range[1]], [0, 1]);
   const dotFills = [dot0, dot1, dot2, dot3];
 
   // Scroll hint opacity
-  const hintOpacity = useTransform(smooth, [0, 0.06], [1, 0]);
+  const hintOpacity = useTransform(p, [0, 0.08], [1, 0]);
 
   return (
     <div ref={containerRef} style={{ height: "400vh", position: "relative" }}>
@@ -416,23 +418,23 @@ function ScrollMovie() {
             {/* Left – text narration */}
             <div className="relative h-64 lg:h-80">
               {SCENES.map((scene) => (
-                <SceneText key={scene.label} scene={scene} progress={smooth} />
+                <SceneText key={scene.label} scene={scene} progress={p} />
               ))}
             </div>
 
             {/* Right – illustrations */}
             <div className="flex items-center justify-center h-64 lg:h-80 relative">
               <motion.div style={{ opacity: s1O }} className="absolute inset-0 flex items-center justify-center">
-                <IllustrationProblem p={smooth} />
+                <IllustrationProblem p={p} />
               </motion.div>
               <motion.div style={{ opacity: s2O }} className="absolute inset-0 flex items-center justify-center">
-                <IllustrationSearch p={smooth} />
+                <IllustrationSearch p={p} />
               </motion.div>
               <motion.div style={{ opacity: s3O }} className="absolute inset-0 flex items-center justify-center">
-                <IllustrationArrival p={smooth} />
+                <IllustrationArrival p={p} />
               </motion.div>
               <motion.div style={{ opacity: s4O }} className="absolute inset-0 flex items-center justify-center">
-                <IllustrationResult p={smooth} />
+                <IllustrationResult p={p} />
               </motion.div>
             </div>
           </div>
