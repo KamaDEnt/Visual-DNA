@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   motion,
   AnimatePresence,
-  useScroll,
   useTransform,
   useInView,
   useMotionValue,
@@ -342,12 +341,23 @@ function SceneText({
   progress: MotionValue<number>;
 }) {
   const [lo, hi] = scene.range;
-  // First scene starts fully visible; all others fade in from the transition point
   const isFirst = lo === 0;
-  const opacityPts = isFirst ? [0, hi - 0.07, hi] : [lo, lo + 0.06, hi - 0.07, hi];
-  const opacityVals = isFirst ? [1, 1, 0] : [0, 1, 1, 0];
-  const yPts = isFirst ? [0, hi] : [lo, lo + 0.1, hi - 0.1, hi];
-  const yVals = isFirst ? [0, -28] : [28, 0, 0, -28];
+  const isLast  = hi === 1;
+  // First scene: visible from 0, fades out near hi
+  // Last scene: fades in near lo, stays visible through 1
+  // Middle scenes: fade in at lo, hold, fade out at hi
+  const opacityPts = isFirst
+    ? [0, hi - 0.07, hi]
+    : isLast
+      ? [lo, lo + 0.06, 1]
+      : [lo, lo + 0.06, hi - 0.07, hi];
+  const opacityVals = isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0];
+  const yPts = isFirst
+    ? [0, hi]
+    : isLast
+      ? [lo, lo + 0.1, 1]
+      : [lo, lo + 0.1, hi - 0.1, hi];
+  const yVals = isFirst ? [0, -28] : isLast ? [28, 0, 0] : [28, 0, 0, -28];
   const opacity = useTransform(progress, opacityPts, opacityVals);
   const y = useTransform(progress, yPts, yVals);
 
@@ -367,20 +377,22 @@ function SceneText({
 
 function ScrollMovie() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
+  const p = useMotionValue(0);
 
-  // Compute exact progress [0→1] from raw scroll + real DOM geometry.
-  // useScroll({ target }) mis-measures sticky containers because it tracks
-  // when the element enters/exits the viewport, not when it's pinned.
-  // This approach is always accurate: progress = scrolled / scrollable.
-  const p = useTransform(scrollY, (y) => {
-    const el = containerRef.current;
-    if (!el) return 0;
-    const containerTop = el.getBoundingClientRect().top + y;
-    const scrollable = el.offsetHeight - window.innerHeight;
-    if (scrollable <= 0) return 0;
-    return Math.max(0, Math.min(1, (y - containerTop) / scrollable));
-  });
+  // Native scroll listener: -rect.top / scrollable gives exact [0→1] progress
+  // for a sticky container. This bypasses all Framer Motion useScroll issues.
+  useEffect(() => {
+    const update = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const scrollable = el.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      p.set(Math.max(0, Math.min(1, -el.getBoundingClientRect().top / scrollable)));
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => window.removeEventListener("scroll", update);
+  }, [p]);
 
   // Scene illustration opacities — scene 1 starts at full opacity immediately
   const s1O = useTransform(p, [0, 0.22, 0.28], [1, 1, 0]);
