@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { Link } from "wouter";
 import {
   motion,
   AnimatePresence,
@@ -575,12 +576,13 @@ export function Home() {
 
           <motion.nav initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
             className="hidden md:flex items-center gap-8">
-            {(["servicos", "como-funciona", "para-prestadores"] as const).map((id, i) => (
-              <button key={id} onClick={() => scrollToSection(id)}
-                className={`text-sm font-medium hover:text-primary transition-colors relative group ${scrolled ? "text-secondary/80" : "text-white/90"}`}>
-                {["Serviços", "Como Funciona", "Para Prestadores"][i]}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-              </button>
+            {(["/servicos", "/como-funciona", "/para-prestadores"] as const).map((href, i) => (
+              <Link key={href} href={href}>
+                <span className={`text-sm font-medium hover:text-primary transition-colors relative group cursor-pointer ${scrolled ? "text-secondary/80" : "text-white/90"}`}>
+                  {["Serviços", "Como Funciona", "Para Prestadores"][i]}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+                </span>
+              </Link>
             ))}
           </motion.nav>
 
@@ -601,10 +603,12 @@ export function Home() {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}
               className="md:hidden bg-white border-t border-border overflow-hidden">
               <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
-                {(["servicos", "como-funciona", "para-prestadores"] as const).map((id, i) => (
-                  <button key={id} onClick={() => scrollToSection(id)} className="text-left py-2 text-secondary font-medium border-b border-border/50 last:border-0">
-                    {["Serviços", "Como Funciona", "Para Prestadores"][i]}
-                  </button>
+                {(["/servicos", "/como-funciona", "/para-prestadores"] as const).map((href, i) => (
+                  <Link key={href} href={href}>
+                    <span className="block py-2 text-secondary font-medium border-b border-border/50 last:border-0 cursor-pointer">
+                      {["Serviços", "Como Funciona", "Para Prestadores"][i]}
+                    </span>
+                  </Link>
                 ))}
                 <Button variant="outline" className="w-full mt-2 rounded-[10px]">Minha Área</Button>
                 <Button className="w-full rounded-[10px] bg-primary text-white">Cadastre-se</Button>
