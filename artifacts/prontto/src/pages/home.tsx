@@ -4,7 +4,6 @@ import {
   AnimatePresence,
   useScroll,
   useTransform,
-  useSpring,
   useInView,
   useMotionValue,
   animate,
@@ -368,13 +367,20 @@ function SceneText({
 
 function ScrollMovie() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
+  const { scrollY } = useScroll();
+
+  // Compute exact progress [0→1] from raw scroll + real DOM geometry.
+  // useScroll({ target }) mis-measures sticky containers because it tracks
+  // when the element enters/exits the viewport, not when it's pinned.
+  // This approach is always accurate: progress = scrolled / scrollable.
+  const p = useTransform(scrollY, (y) => {
+    const el = containerRef.current;
+    if (!el) return 0;
+    const containerTop = el.getBoundingClientRect().top + y;
+    const scrollable = el.offsetHeight - window.innerHeight;
+    if (scrollable <= 0) return 0;
+    return Math.max(0, Math.min(1, (y - containerTop) / scrollable));
   });
-  // Use scrollYProgress directly — a spring would lag too far behind and never
-  // reach the scene transition thresholds when the user scrolls normally.
-  const p = scrollYProgress;
 
   // Scene illustration opacities — scene 1 starts at full opacity immediately
   const s1O = useTransform(p, [0, 0.22, 0.28], [1, 1, 0]);
