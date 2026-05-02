@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   motion,
   AnimatePresence,
@@ -333,100 +333,103 @@ const SCENES = [
   },
 ];
 
-function SceneText({
-  scene,
-  progress,
-}: {
-  scene: (typeof SCENES)[0];
-  progress: MotionValue<number>;
-}) {
+// Simple piecewise-linear interpolation — no MotionValue needed
+function lerp(v: number, input: number[], output: number[]): number {
+  if (v <= input[0]) return output[0];
+  if (v >= input[input.length - 1]) return output[output.length - 1];
+  for (let i = 0; i < input.length - 1; i++) {
+    if (v >= input[i] && v <= input[i + 1]) {
+      const t = (v - input[i]) / (input[i + 1] - input[i]);
+      return output[i] + t * (output[i + 1] - output[i]);
+    }
+  }
+  return output[0];
+}
+
+function SceneText({ scene, progress }: { scene: (typeof SCENES)[0]; progress: number }) {
   const [lo, hi] = scene.range;
   const isFirst = lo === 0;
-  const isLast  = hi === 1;
-  // First scene: visible from 0, fades out near hi
-  // Last scene: fades in near lo, stays visible through 1
-  // Middle scenes: fade in at lo, hold, fade out at hi
-  const opacityPts = isFirst
-    ? [0, hi - 0.07, hi]
+  const isLast = hi === 1;
+
+  const opacity = isFirst
+    ? lerp(progress, [0, hi - 0.07, hi], [1, 1, 0])
     : isLast
-      ? [lo, lo + 0.06, 1]
-      : [lo, lo + 0.06, hi - 0.07, hi];
-  const opacityVals = isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0];
-  const yPts = isFirst
-    ? [0, hi]
+      ? lerp(progress, [lo, lo + 0.06, 1], [0, 1, 1])
+      : lerp(progress, [lo, lo + 0.06, hi - 0.07, hi], [0, 1, 1, 0]);
+
+  const y = isFirst
+    ? lerp(progress, [0, hi], [0, -28])
     : isLast
-      ? [lo, lo + 0.1, 1]
-      : [lo, lo + 0.1, hi - 0.1, hi];
-  const yVals = isFirst ? [0, -28] : isLast ? [28, 0, 0] : [28, 0, 0, -28];
-  const opacity = useTransform(progress, opacityPts, opacityVals);
-  const y = useTransform(progress, yPts, yVals);
+      ? lerp(progress, [lo, lo + 0.1, 1], [28, 0, 0])
+      : lerp(progress, [lo, lo + 0.1, hi - 0.1, hi], [28, 0, 0, -28]);
 
   return (
-    <motion.div style={{ opacity, y }} className="absolute inset-0 flex flex-col justify-center gap-5">
+    <div
+      style={{ opacity, transform: `translateY(${y}px)`, position: "absolute", inset: 0 }}
+      className="flex flex-col justify-center gap-5"
+    >
       <span className={`text-xs font-bold uppercase tracking-[0.2em] ${scene.color}`}>{scene.label}</span>
       <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">{scene.headline}</h2>
       <p className="text-base md:text-lg text-white/60 leading-relaxed max-w-sm">{scene.body}</p>
-      {scene.range[1] === 1 && (
+      {isLast && (
         <Button className="w-fit rounded-[10px] bg-primary hover:bg-primary/90 text-white px-8 h-12 shadow-xl shadow-primary/40 text-sm font-bold mt-2">
           Encontrar Profissional <ArrowRight size={16} className="ml-1.5" />
         </Button>
       )}
-    </motion.div>
+    </div>
   );
 }
 
 function ScrollMovie() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  // p MotionValue kept only for illustration internal micro-animations
   const p = useMotionValue(0);
 
-  // Native scroll listener: -rect.top / scrollable gives exact [0→1] progress
-  // for a sticky container. This bypasses all Framer Motion useScroll issues.
+  const update = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const scrollable = el.offsetHeight - window.innerHeight;
+    if (scrollable <= 0) return;
+    const v = Math.max(0, Math.min(1, -el.getBoundingClientRect().top / scrollable));
+    setProgress(v);
+    p.set(v);
+  }, [p]);
+
   useEffect(() => {
-    const update = () => {
-      const el = containerRef.current;
-      if (!el) return;
-      const scrollable = el.offsetHeight - window.innerHeight;
-      if (scrollable <= 0) return;
-      p.set(Math.max(0, Math.min(1, -el.getBoundingClientRect().top / scrollable)));
-    };
     window.addEventListener("scroll", update, { passive: true });
     update();
     return () => window.removeEventListener("scroll", update);
-  }, [p]);
+  }, [update]);
 
-  // Scene illustration opacities — scene 1 starts at full opacity immediately
-  const s1O = useTransform(p, [0, 0.22, 0.28], [1, 1, 0]);
-  const s2O = useTransform(p, [0.22, 0.28, 0.47, 0.53], [0, 1, 1, 0]);
-  const s3O = useTransform(p, [0.47, 0.53, 0.72, 0.78], [0, 1, 1, 0]);
-  const s4O = useTransform(p, [0.72, 0.78, 1], [0, 1, 1]);
+  // All values computed directly from progress — no useTransform chains
+  const s1O = lerp(progress, [0, 0.22, 0.28], [1, 1, 0]);
+  const s2O = lerp(progress, [0.22, 0.28, 0.47, 0.53], [0, 1, 1, 0]);
+  const s3O = lerp(progress, [0.47, 0.53, 0.72, 0.78], [0, 1, 1, 0]);
+  const s4O = lerp(progress, [0.72, 0.78, 1], [0, 1, 1]);
 
-  // Progress bar
-  const barScaleX = useTransform(p, [0, 1], [0, 1]);
+  const barW = `${progress * 100}%`;
 
-  // Dot fills (explicit — hooks cannot be inside .map)
-  const dot0 = useTransform(p, [SCENES[0].range[0], SCENES[0].range[1]], [0, 1]);
-  const dot1 = useTransform(p, [SCENES[1].range[0], SCENES[1].range[1]], [0, 1]);
-  const dot2 = useTransform(p, [SCENES[2].range[0], SCENES[2].range[1]], [0, 1]);
-  const dot3 = useTransform(p, [SCENES[3].range[0], SCENES[3].range[1]], [0, 1]);
-  const dotFills = [dot0, dot1, dot2, dot3];
+  const dotScales = SCENES.map((s) =>
+    lerp(progress, [s.range[0], s.range[1]], [0, 1])
+  );
 
-  // Scroll hint opacity
-  const hintOpacity = useTransform(p, [0, 0.08], [1, 0]);
+  const hintOpacity = lerp(progress, [0, 0.08], [1, 0]);
 
   return (
     <div ref={containerRef} style={{ height: "400vh", position: "relative" }}>
       <div className="sticky top-0 h-screen overflow-hidden bg-secondary">
         {/* Ambient glow */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/15 rounded-full blur-[140px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
           <div className="absolute inset-0 opacity-[0.03]"
             style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         </div>
 
         {/* Progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/8 z-30">
-          <motion.div style={{ scaleX: barScaleX }} className="h-full bg-primary origin-left" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/10 z-30">
+          <div style={{ width: barW }} className="h-full bg-primary transition-none" />
         </div>
 
         {/* Main layout */}
@@ -436,24 +439,24 @@ function ScrollMovie() {
             {/* Left – text narration */}
             <div className="relative h-64 lg:h-80">
               {SCENES.map((scene) => (
-                <SceneText key={scene.label} scene={scene} progress={p} />
+                <SceneText key={scene.label} scene={scene} progress={progress} />
               ))}
             </div>
 
             {/* Right – illustrations */}
             <div className="flex items-center justify-center h-64 lg:h-80 relative">
-              <motion.div style={{ opacity: s1O }} className="absolute inset-0 flex items-center justify-center">
+              <div style={{ opacity: s1O, position: "absolute", inset: 0 }} className="flex items-center justify-center">
                 <IllustrationProblem p={p} />
-              </motion.div>
-              <motion.div style={{ opacity: s2O }} className="absolute inset-0 flex items-center justify-center">
+              </div>
+              <div style={{ opacity: s2O, position: "absolute", inset: 0 }} className="flex items-center justify-center">
                 <IllustrationSearch p={p} />
-              </motion.div>
-              <motion.div style={{ opacity: s3O }} className="absolute inset-0 flex items-center justify-center">
+              </div>
+              <div style={{ opacity: s3O, position: "absolute", inset: 0 }} className="flex items-center justify-center">
                 <IllustrationArrival p={p} />
-              </motion.div>
-              <motion.div style={{ opacity: s4O }} className="absolute inset-0 flex items-center justify-center">
+              </div>
+              <div style={{ opacity: s4O, position: "absolute", inset: 0 }} className="flex items-center justify-center">
                 <IllustrationResult p={p} />
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
@@ -463,7 +466,10 @@ function ScrollMovie() {
           {SCENES.map((s, i) => (
             <div key={s.label} className="relative flex flex-col items-center gap-1.5">
               <div className="relative w-16 h-1 bg-white/15 rounded-full overflow-hidden">
-                <motion.div style={{ scaleX: dotFills[i] }} className="absolute inset-0 bg-primary origin-left rounded-full" />
+                <div
+                  style={{ transform: `scaleX(${dotScales[i]})`, transformOrigin: "left" }}
+                  className="absolute inset-0 bg-primary rounded-full"
+                />
               </div>
               <span className="text-white/25 text-[8px] uppercase tracking-widest">{s.label}</span>
             </div>
@@ -471,13 +477,13 @@ function ScrollMovie() {
         </div>
 
         {/* Scroll hint */}
-        <motion.div style={{ opacity: hintOpacity }} className="absolute bottom-6 right-8 flex flex-col items-center gap-1.5 z-20">
+        <div style={{ opacity: hintOpacity }} className="absolute bottom-6 right-8 flex flex-col items-center gap-1.5 z-20">
           <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.4, repeat: Infinity }}
             className="w-5 h-8 rounded-full border border-white/25 flex items-start justify-center pt-1.5">
             <div className="w-1.5 h-2 bg-white/50 rounded-full" />
           </motion.div>
           <span className="text-white/30 text-[9px] uppercase tracking-widest">Role</span>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
