@@ -1,11 +1,151 @@
+<!-- ======================================================
+     HERO SECTION
+     ====================================================== -->
 <section class="hero">
-  <h1>Encontre profissionais de confiança para seu lar</h1>
-  <p>Serviços domésticos com qualidade e agilidade</p>
-  <a routerLink="/servicos" class="btn-primario">Ver Serviços</a>
-  <a routerLink="/para-prestadores" class="btn-secundario">Sou Prestador</a>
+  <div class="hero__inner">
+    <!-- Texto -->
+    <div class="hero__texto">
+      <span class="hero__label">SERVIÇO SOB MEDIDA</span>
+      <h1 class="hero__titulo">
+        O profissional certo,<br>
+        <span class="hero__destaque">prontto</span> pra você.
+      </h1>
+      <p class="hero__subtitulo">
+        Conectamos você aos melhores prestadores de serviço da sua região.
+        Limpeza, reparos, jardinagem, montagem e muito mais — tudo em um só lugar.
+      </p>
+      <a routerLink="/cadastrar" class="btn-hero">Encontrar Profissional</a>
+
+      <!-- Stats -->
+      <div class="hero__stats">
+        <div class="hero__stat">
+          <strong>500+</strong>
+          <span>Profissionais</span>
+        </div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat">
+          <strong>15+</strong>
+          <span>Categorias</span>
+        </div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat">
+          <strong>4.8★</strong>
+          <span>Avaliação</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ilustração -->
+    <div class="hero__ilustracao" aria-hidden="true">
+      <div class="ilus-casa">
+        <div class="ilus-telhado"></div>
+        <div class="ilus-corpo">
+          <div class="ilus-porta"></div>
+          <div class="ilus-janela ilus-janela--esq"></div>
+          <div class="ilus-janela ilus-janela--dir"></div>
+        </div>
+        <div class="ilus-icones">
+          <span class="ilus-badge ilus-badge--1">🔧</span>
+          <span class="ilus-badge ilus-badge--2">⚡</span>
+          <span class="ilus-badge ilus-badge--3">🧹</span>
+          <span class="ilus-badge ilus-badge--4">🌱</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="como-funciona-preview">
-  <h2>Como funciona?</h2>
-  <a routerLink="/como-funciona">Saiba mais</a>
+<!-- ======================================================
+     STEP INDICATOR BAR
+     ====================================================== -->
+<section class="step-bar">
+  <div class="step-bar__inner">
+    @for (passo of passos; track passo.label; let i = $index) {
+      <button
+        class="step-bar__item"
+        [class.ativo]="passoAtivo() === i"
+        (click)="selecionarPasso(i)"
+        [attr.aria-pressed]="passoAtivo() === i"
+      >
+        <div class="step-bar__progresso"></div>
+        <span class="step-bar__label">{{ passo.label }}</span>
+      </button>
+    }
+  </div>
 </section>
+
+<!-- ======================================================
+     STORY SECTION (exibe o passo selecionado)
+     ====================================================== -->
+<section class="story">
+  <div class="story__inner">
+    <div class="story__texto">
+      <span class="story__numero">0{{ passoAtivo() + 1 }}</span>
+      <h2 class="story__titulo">{{ passoAtualDados().titulo }}</h2>
+      <p class="story__descricao">{{ passoAtualDados().descricao }}</p>
+      <a routerLink="/cadastrar" class="btn-story">Começar agora</a>
+    </div>
+    <div class="story__icone" aria-hidden="true">
+      <span>{{ passoAtualDados().icone }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================
+     SEÇÃO DE CATEGORIAS
+     ====================================================== -->
+<section class="categorias">
+  <div class="categorias__inner">
+    <span class="categorias__label">CATEGORIAS</span>
+    <h2 class="categorias__titulo">Serviços para todas as suas necessidades</h2>
+    <p class="categorias__subtitulo">
+      De pequenos reparos a grandes projetos, encontre o profissional ideal.
+    </p>
+
+    <div class="categorias__grade">
+      @for (cat of categorias; track cat.titulo) {
+        <div class="card-categoria">
+          <span class="card-categoria__icone">{{ cat.icone }}</span>
+          <h3 class="card-categoria__titulo">{{ cat.titulo }}</h3>
+          <p class="card-categoria__descricao">{{ cat.descricao }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="categorias__cta">
+      <a routerLink="/para-prestadores" class="btn-categoria-cta">Quero Trabalhar</a>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================
+     CTA FINAL
+     ====================================================== -->
+<section class="cta-final">
+  <div class="cta-final__inner">
+    <h2 class="cta-final__titulo">Pronto para resolver seus problemas?</h2>
+    <p class="cta-final__subtitulo">
+      Milhares de profissionais esperando por você.
+    </p>
+    <a routerLink="/cadastrar" class="btn-cta-final">Começar agora</a>
+  </div>
+</section>
+
+<!-- ======================================================
+     FOOTER
+     ====================================================== -->
+<footer class="rodape">
+  <div class="rodape__inner">
+    <a routerLink="/" class="rodape__logo">
+      <span class="logo-pront">PRONT</span><span class="logo-to">TO</span>
+    </a>
+
+    <nav class="rodape__links" aria-label="Links do rodapé">
+      <a routerLink="/servicos">Serviços</a>
+      <a routerLink="/como-funciona">Como Funciona</a>
+      <a routerLink="/para-prestadores">Para Prestadores</a>
+    </nav>
+
+    <p class="rodape__copy">&copy; 2025 Prontto. Todos os direitos reservados.</p>
+  </div>
+</footer>

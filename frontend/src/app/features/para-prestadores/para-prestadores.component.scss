@@ -1,45 +1,178 @@
+/* ============================================================
+   Para Prestadores Component — Prontto
+   ============================================================ */
+
 .para-prestadores {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.hero {
+/* Hero laranja */
+.hero-prestador {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  padding: 5rem 1.5rem;
   text-align: center;
-  padding: 4rem 1rem;
-
-  h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 0.75rem; }
-  p { color: #6b7280; font-size: 1.125rem; margin-bottom: 2rem; }
+  color: #ffffff;
 }
 
-.btn-cta {
+.hero-prestador__inner {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.hero-prestador__label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 1rem;
+}
+
+.hero-prestador__titulo {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  line-height: 1.15;
+}
+
+.hero-prestador__subtitulo {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+.btn-hero-prestador {
   display: inline-block;
   padding: 0.875rem 2.5rem;
-  background: #1a56db;
-  color: #fff;
-  border-radius: 0.5rem;
-  text-decoration: none;
-  font-weight: 700;
+  background: #ffffff;
+  color: #ea580c;
+  border-radius: 2rem;
+  font-weight: 800;
   font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+    transform: translateY(-2px);
+  }
 }
 
+/* Benefícios */
 .beneficios {
-  padding: 3rem 0;
-
-  h2 { text-align: center; font-size: 1.5rem; margin-bottom: 2rem; }
+  background: #ffffff;
+  padding: 5rem 1.5rem;
 }
 
-.grade {
+.beneficios__inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.secao-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #f97316;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.beneficios__titulo {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.beneficios__subtitulo {
+  color: #6b7280;
+  font-size: 1.0625rem;
+  margin-bottom: 3rem;
+}
+
+.beneficios__grade {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
 }
 
-.card {
+.card-beneficio {
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
 
-  h3 { font-weight: 700; margin-bottom: 0.5rem; }
-  p { font-size: 0.875rem; color: #6b7280; }
+  &:hover {
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.12);
+    border-color: #f97316;
+    transform: translateY(-3px);
+  }
+}
+
+.card-beneficio__icone {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.card-beneficio__titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.card-beneficio__descricao {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* CTA final */
+.cta-prestador {
+  background: #0d1117;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+.cta-prestador__inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cta-prestador__titulo {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.cta-prestador__subtitulo {
+  color: #9ca3af;
+  font-size: 1.0625rem;
+  margin-bottom: 2rem;
+}
+
+.btn-cta-prestador {
+  display: inline-block;
+  padding: 0.875rem 2.5rem;
+  background: #f97316;
+  color: #ffffff;
+  border-radius: 2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+
+  &:hover {
+    background: #ea580c;
+    transform: translateY(-2px);
+  }
 }

@@ -115,6 +115,36 @@ Api → depende de Application + Infrastructure (controllers, middlewares, DI)
 - `provideHttpClient(withInterceptors([authInterceptor]))` no `app.config.ts`
 - `provideRouter` com lazy loading em todas as rotas
 
+### Design System & Cores
+
+Variáveis CSS definidas em `frontend/src/styles.scss` — usar sempre via `var()`, nunca valores hardcoded:
+
+| Variável | Valor | Uso |
+|----------|-------|-----|
+| `--cor-primaria` | `#f97316` | Botões, destaques, logo "TO", labels de seção |
+| `--cor-primaria-hover` | `#ea580c` | Hover de botões laranja |
+| `--cor-navy` | `#0d1117` | Fundo hero, footer, seções dark |
+| `--cor-navy-medio` | `#111827` | Variação do fundo escuro |
+| `--cor-texto` | `#374151` | Texto principal |
+| `--cor-texto-suave` | `#6b7280` | Texto secundário, subtítulos |
+| `--cor-borda` | `#e5e7eb` | Bordas de cards e inputs |
+| `--cor-fundo` | `#f9fafb` | Fundo de páginas claras |
+
+**Tipografia:** `'Inter', system-ui, -apple-system, sans-serif`
+
+**Logo:** `<span class="logo-pront">PRONT</span><span class="logo-to">TO</span>` — "PRONT" em preto bold, "TO" em `--cor-primaria`
+
+**Botões:**
+- Primário: `background: var(--cor-primaria)`, `color: white`, `border-radius: 9999px` (pill), hover `--cor-primaria-hover`
+- Secundário/outline: `border: 2px solid var(--cor-primaria)`, `color: var(--cor-primaria)`, fundo transparente
+- Destrutivo: `border: 1px solid #dc2626`, `color: #dc2626`
+
+**Estrutura visual das seções:**
+- Seções dark (hero, story, footer): `background: var(--cor-navy)`, texto branco
+- Seções claras: `background: white` ou `var(--cor-fundo)`
+- Labels de seção (ex: "CATEGORIAS", "SERVIÇO SOB MEDIDA"): uppercase, `font-size: 0.75rem`, `letter-spacing: 0.1em`, `color: var(--cor-primaria)`
+- Inputs com foco: `outline: 2px solid var(--cor-primaria)`
+
 ### Modelos TypeScript
 Os modelos em `core/models/usuario.model.ts` usam nomes em português espelhando o domínio C#:
 `Usuario`, `Servico`, `Cobranca`, `DadosBancarios`, `MensagemServico`, `EstatisticasAdmin`
@@ -191,3 +221,4 @@ cd backend && dotnet ef database update \
 4. **Valores monetários sempre `decimal`** no C# — nunca `double` ou `float`
 5. **Mapeamento de colunas explícito** em `ContextoBancoDados` — não depender de convenção automática
 6. **Projetos e pastas em inglês**, **código (classes, variáveis, interfaces) em português**
+7. **Estrutura de componentes Angular obrigatória** — cada tela/feature deve ter pasta isolada com arquivos separados: `.component.ts`, `.component.html`, `.component.scss`, `.component.spec.ts`. Nunca usar `template` ou `styles` inline. Guards em arquivos separados (`auth.guard.ts`, `admin.guard.ts` — nunca co-exportados).

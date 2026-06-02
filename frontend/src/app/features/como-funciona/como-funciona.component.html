@@ -1,18 +1,26 @@
 <div class="como-funciona">
-  <h1>Como funciona o Prontto?</h1>
-  <p>Simples, rápido e seguro para você e para os profissionais</p>
+  <!-- Header -->
+  <div class="como-funciona__header">
+    <span class="secao-label">COMO FUNCIONA</span>
+    <h1 class="como-funciona__titulo">Como funciona o Prontto?</h1>
+    <p class="como-funciona__subtitulo">
+      Simples, rápido e seguro para você e para os profissionais
+    </p>
+  </div>
 
+  <!-- Passos -->
   <div class="passos">
     @for (passo of passos; track passo.numero) {
       <div class="passo">
-        <div class="numero">{{ passo.numero }}</div>
-        <h3>{{ passo.titulo }}</h3>
-        <p>{{ passo.descricao }}</p>
+        <div class="passo__numero">{{ passo.numero }}</div>
+        <h3 class="passo__titulo">{{ passo.titulo }}</h3>
+        <p class="passo__descricao">{{ passo.descricao }}</p>
       </div>
     }
   </div>
 
-  <div class="cta">
-    <a routerLink="/cadastrar">Começar agora</a>
+  <!-- CTA -->
+  <div class="como-funciona__cta">
+    <a routerLink="/cadastrar" class="btn-cta">Começar agora</a>
   </div>
 </div>

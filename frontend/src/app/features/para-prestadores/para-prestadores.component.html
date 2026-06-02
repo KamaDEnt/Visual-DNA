@@ -1,19 +1,41 @@
 <div class="para-prestadores">
-  <section class="hero">
-    <h1>Cresça seu negócio com o Prontto</h1>
-    <p>Conectamos você a quem precisa dos seus serviços</p>
-    <a routerLink="/cadastrar" class="btn-cta">Cadastrar como prestador</a>
+  <!-- Hero laranja -->
+  <section class="hero-prestador">
+    <div class="hero-prestador__inner">
+      <span class="hero-prestador__label">PARA PROFISSIONAIS</span>
+      <h1 class="hero-prestador__titulo">Cresça seu negócio com o Prontto</h1>
+      <p class="hero-prestador__subtitulo">
+        Conectamos você a quem precisa dos seus serviços. Sem intermediários, sem burocracia.
+      </p>
+      <a routerLink="/cadastrar" class="btn-hero-prestador">Cadastrar como prestador</a>
+    </div>
   </section>
 
+  <!-- Benefícios -->
   <section class="beneficios">
-    <h2>Por que usar o Prontto?</h2>
-    <div class="grade">
-      @for (beneficio of beneficios; track beneficio.titulo) {
-        <div class="card">
-          <h3>{{ beneficio.titulo }}</h3>
-          <p>{{ beneficio.descricao }}</p>
-        </div>
-      }
+    <div class="beneficios__inner">
+      <span class="secao-label">BENEFÍCIOS</span>
+      <h2 class="beneficios__titulo">Por que usar o Prontto?</h2>
+      <p class="beneficios__subtitulo">Tudo que você precisa para crescer profissionalmente</p>
+
+      <div class="beneficios__grade">
+        @for (beneficio of beneficios; track beneficio.titulo) {
+          <div class="card-beneficio">
+            <div class="card-beneficio__icone">{{ beneficio.icone }}</div>
+            <h3 class="card-beneficio__titulo">{{ beneficio.titulo }}</h3>
+            <p class="card-beneficio__descricao">{{ beneficio.descricao }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section class="cta-prestador">
+    <div class="cta-prestador__inner">
+      <h2 class="cta-prestador__titulo">Pronto para começar?</h2>
+      <p class="cta-prestador__subtitulo">Crie sua conta gratuitamente e comece a receber clientes hoje.</p>
+      <a routerLink="/cadastrar" class="btn-cta-prestador">Criar conta grátis</a>
     </div>
   </section>
 </div>

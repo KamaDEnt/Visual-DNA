@@ -1,27 +1,60 @@
+/* ============================================================
+   Not Found Component — Prontto
+   ============================================================ */
+
 .nao-encontrado {
+  min-height: calc(100vh - 64px);
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
   text-align: center;
-  padding: 5rem 1rem;
+}
 
-  h1 {
-    font-size: 6rem;
-    font-weight: 800;
-    color: #1a56db;
-    margin-bottom: 0.5rem;
-  }
+.nao-encontrado__inner {
+  max-width: 480px;
+}
 
-  p {
-    font-size: 1.25rem;
-    color: #6b7280;
-    margin-bottom: 2rem;
-  }
+.nao-encontrado__codigo {
+  font-size: clamp(6rem, 15vw, 9rem);
+  font-weight: 800;
+  color: #f97316;
+  line-height: 1;
+  margin-bottom: 1rem;
+  letter-spacing: -0.04em;
+  /* Efeito outline */
+  -webkit-text-stroke: 2px #f97316;
+  text-shadow: 0 8px 32px rgba(249, 115, 22, 0.25);
+}
 
-  a {
-    color: #1a56db;
-    font-weight: 500;
-    text-decoration: none;
+.nao-encontrado__titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
 
-    &:hover {
-      text-decoration: underline;
-    }
+.nao-encontrado__descricao {
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.btn-voltar {
+  display: inline-block;
+  padding: 0.875rem 2.5rem;
+  background: #f97316;
+  color: #ffffff;
+  border-radius: 2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+
+  &:hover {
+    background: #ea580c;
+    transform: translateY(-2px);
   }
 }

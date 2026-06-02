@@ -1,54 +1,100 @@
-<div class="container-cadastro">
-  <h1>Criar conta</h1>
+<div class="pagina-auth">
+  <div class="card-auth">
+    <!-- Logo -->
+    <a routerLink="/" class="auth-logo">
+      <span class="logo-pront">PRONT</span><span class="logo-to">TO</span>
+    </a>
 
-  @if (erro()) {
-    <p class="erro">{{ erro() }}</p>
-  }
+    <h1 class="auth-titulo">Criar conta</h1>
+    <p class="auth-subtitulo">Junte-se a milhares de usuários no Prontto</p>
 
-  <form [formGroup]="formulario" (ngSubmit)="cadastrar()">
-    <div class="campo">
-      <label for="nome">Nome completo</label>
-      <input id="nome" type="text" formControlName="nome" placeholder="Seu nome" />
-    </div>
-
-    <div class="campo">
-      <label for="email">E-mail</label>
-      <input id="email" type="email" formControlName="email" placeholder="seu@email.com" />
-    </div>
-
-    <div class="campo">
-      <label for="senha">Senha</label>
-      <input id="senha" type="password" formControlName="senha" placeholder="Mínimo 8 caracteres" />
-    </div>
-
-    <div class="campo">
-      <label for="tipoConta">Tipo de conta</label>
-      <select id="tipoConta" formControlName="tipoConta" (change)="onTipoContaMudou($event)">
-        <option value="cliente">Cliente</option>
-        <option value="prestador">Prestador de serviço</option>
-      </select>
-    </div>
-
-    <div class="campo">
-      <label for="telefone">Telefone (opcional)</label>
-      <input id="telefone" type="tel" formControlName="telefone" placeholder="(11) 99999-9999" />
-    </div>
-
-    @if (ehPrestador()) {
-      <div class="campo">
-        <label for="especialidade">Especialidade</label>
-        <input id="especialidade" type="text" formControlName="especialidade" placeholder="Ex: Encanador, Eletricista..." />
-      </div>
-      <div class="campo">
-        <label for="cidade">Cidade</label>
-        <input id="cidade" type="text" formControlName="cidade" placeholder="São Paulo" />
+    @if (erro()) {
+      <div class="auth-erro" role="alert">
+        <span>&#9888;</span> {{ erro() }}
       </div>
     }
 
-    <button type="submit" [disabled]="formulario.invalid || carregando()">
-      {{ carregando() ? 'Criando conta...' : 'Criar conta' }}
-    </button>
-  </form>
+    <form [formGroup]="formulario" (ngSubmit)="cadastrar()" novalidate>
+      <div class="campo">
+        <label for="nome">Nome completo</label>
+        <input
+          id="nome"
+          type="text"
+          formControlName="nome"
+          placeholder="Seu nome"
+          autocomplete="name"
+        />
+      </div>
 
-  <p>Já tem conta? <a routerLink="/entrar">Entrar</a></p>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="seu@email.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Mínimo 8 caracteres"
+          autocomplete="new-password"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="tipoConta">Tipo de conta</label>
+        <select id="tipoConta" formControlName="tipoConta" (change)="onTipoContaMudou($event)">
+          <option value="cliente">Cliente</option>
+          <option value="prestador">Prestador de serviço</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="telefone">Telefone <span class="opcional">(opcional)</span></label>
+        <input
+          id="telefone"
+          type="tel"
+          formControlName="telefone"
+          placeholder="(11) 99999-9999"
+          autocomplete="tel"
+        />
+      </div>
+
+      @if (ehPrestador()) {
+        <div class="campo">
+          <label for="especialidade">Especialidade</label>
+          <input
+            id="especialidade"
+            type="text"
+            formControlName="especialidade"
+            placeholder="Ex: Encanador, Eletricista..."
+          />
+        </div>
+        <div class="campo">
+          <label for="cidade">Cidade</label>
+          <input
+            id="cidade"
+            type="text"
+            formControlName="cidade"
+            placeholder="São Paulo"
+          />
+        </div>
+      }
+
+      <button type="submit" class="btn-submit" [disabled]="formulario.invalid || carregando()">
+        {{ carregando() ? 'Criando conta...' : 'Criar conta' }}
+      </button>
+    </form>
+
+    <p class="auth-link">
+      Já tem conta? <a routerLink="/entrar">Entrar</a>
+    </p>
+  </div>
 </div>

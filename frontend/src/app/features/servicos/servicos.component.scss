@@ -1,40 +1,136 @@
-.servicos {
-  max-width: 1000px;
-  margin: 3rem auto;
-  padding: 1rem;
-  text-align: center;
+/* ============================================================
+   Serviços Component — Prontto
+   ============================================================ */
 
-  h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-  p { color: #6b7280; margin-bottom: 2rem; }
+.servicos {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
 }
 
-.grade {
+/* Header */
+.servicos__header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.secao-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #f97316;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.servicos__titulo {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.servicos__subtitulo {
+  color: #6b7280;
+  font-size: 1.0625rem;
+}
+
+/* Grade */
+.servicos__grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
-.card-categoria {
+.card-servico {
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
-  padding: 1.5rem;
-  transition: box-shadow 0.2s;
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
-  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
-
-  .icone { font-size: 2.5rem; }
-  h3 { margin: 0.75rem 0 0.5rem; font-weight: 700; }
-  p { font-size: 0.875rem; color: #6b7280; }
+  &:hover {
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.12);
+    border-color: #f97316;
+    transform: translateY(-3px);
+  }
 }
 
-.btn {
+.card-servico__icone {
+  font-size: 2.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.card-servico__titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.card-servico__descricao {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.card-servico__btn {
   display: inline-block;
-  margin-top: 1rem;
   padding: 0.5rem 1.25rem;
-  background: #1a56db;
-  color: #fff;
-  border-radius: 0.5rem;
+  background: #f97316;
+  color: #ffffff;
+  border-radius: 2rem;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.875rem;
+  transition: background 0.2s, transform 0.2s;
+
+  &:hover {
+    background: #ea580c;
+    transform: translateY(-1px);
+  }
+}
+
+/* CTA */
+.servicos__cta {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  p {
+    color: #6b7280;
+    font-size: 1rem;
+  }
+}
+
+.btn-cta {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border: 2px solid #f97316;
+  color: #f97316;
+  border-radius: 2rem;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: #f97316;
+    color: #ffffff;
+  }
+}
+
+@media (max-width: 480px) {
+  .servicos__grade {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

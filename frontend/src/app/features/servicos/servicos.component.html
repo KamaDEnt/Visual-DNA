@@ -1,15 +1,26 @@
 <div class="servicos">
-  <h1>Nossos Serviços</h1>
-  <p>Encontre o profissional ideal para cada necessidade do seu lar</p>
+  <!-- Header -->
+  <div class="servicos__header">
+    <span class="secao-label">SERVIÇOS</span>
+    <h1 class="servicos__titulo">Nossos Serviços</h1>
+    <p class="servicos__subtitulo">Encontre o profissional ideal para cada necessidade do seu lar</p>
+  </div>
 
-  <div class="grade">
+  <!-- Grade de categorias -->
+  <div class="servicos__grade">
     @for (categoria of categorias; track categoria.titulo) {
-      <div class="card-categoria">
-        <span class="icone">{{ categoria.icone }}</span>
-        <h3>{{ categoria.titulo }}</h3>
-        <p>{{ categoria.descricao }}</p>
-        <a routerLink="/cadastrar" class="btn">Solicitar</a>
+      <div class="card-servico">
+        <span class="card-servico__icone">{{ categoria.icone }}</span>
+        <h3 class="card-servico__titulo">{{ categoria.titulo }}</h3>
+        <p class="card-servico__descricao">{{ categoria.descricao }}</p>
+        <a routerLink="/cadastrar" class="card-servico__btn">Solicitar</a>
       </div>
     }
+  </div>
+
+  <!-- CTA -->
+  <div class="servicos__cta">
+    <p>Não encontrou o que precisa?</p>
+    <a routerLink="/cadastrar" class="btn-cta">Falar com suporte</a>
   </div>
 </div>
