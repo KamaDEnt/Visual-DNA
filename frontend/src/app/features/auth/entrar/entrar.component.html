@@ -1,0 +1,25 @@
+<div class="container-login">
+  <h1>Entrar</h1>
+
+  @if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="entrar()">
+    <div class="campo">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" formControlName="email" placeholder="seu@email.com" />
+    </div>
+
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" formControlName="senha" placeholder="Mínimo 8 caracteres" />
+    </div>
+
+    <button type="submit" [disabled]="formulario.invalid || carregando()">
+      {{ carregando() ? 'Entrando...' : 'Entrar' }}
+    </button>
+  </form>
+
+  <p>Não tem conta? <a routerLink="/cadastrar">Cadastre-se</a></p>
+</div>

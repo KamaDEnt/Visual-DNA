@@ -1,0 +1,18 @@
+<div class="como-funciona">
+  <h1>Como funciona o Prontto?</h1>
+  <p>Simples, rápido e seguro para você e para os profissionais</p>
+
+  <div class="passos">
+    @for (passo of passos; track passo.numero) {
+      <div class="passo">
+        <div class="numero">{{ passo.numero }}</div>
+        <h3>{{ passo.titulo }}</h3>
+        <p>{{ passo.descricao }}</p>
+      </div>
+    }
+  </div>
+
+  <div class="cta">
+    <a routerLink="/cadastrar">Começar agora</a>
+  </div>
+</div>

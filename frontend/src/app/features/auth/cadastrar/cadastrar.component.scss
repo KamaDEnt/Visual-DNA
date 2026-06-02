@@ -1,0 +1,41 @@
+.container-cadastro {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+
+  h1 { margin-bottom: 1.5rem; }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+
+  label { font-weight: 600; font-size: 0.875rem; }
+
+  input, select {
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    &:focus { outline: 2px solid #1a56db; border-color: transparent; }
+  }
+}
+
+button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #1a56db;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.erro { color: #dc2626; margin-bottom: 1rem; }

@@ -1,0 +1,15 @@
+<div class="servicos">
+  <h1>Nossos Serviços</h1>
+  <p>Encontre o profissional ideal para cada necessidade do seu lar</p>
+
+  <div class="grade">
+    @for (categoria of categorias; track categoria.titulo) {
+      <div class="card-categoria">
+        <span class="icone">{{ categoria.icone }}</span>
+        <h3>{{ categoria.titulo }}</h3>
+        <p>{{ categoria.descricao }}</p>
+        <a routerLink="/cadastrar" class="btn">Solicitar</a>
+      </div>
+    }
+  </div>
+</div>

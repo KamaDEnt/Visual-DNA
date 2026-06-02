@@ -1,0 +1,26 @@
+﻿using Prontto.Domain.Enums;
+
+namespace Prontto.Domain.Entities;
+
+public class Servico
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Titulo { get; set; } = string.Empty;
+    public string? Descricao { get; set; }
+    public string Categoria { get; set; } = string.Empty;
+    public Guid? ClienteId { get; set; }
+    public Guid? PrestadorId { get; set; }
+    public decimal Preco { get; set; }
+    public decimal TaxaAdminRate { get; set; } = 0.2000m;
+    public StatusServico Status { get; set; } = StatusServico.AguardandoAprovacao;
+    public string? Endereco { get; set; }
+    public DateTime? AgendadoEm { get; set; }
+    public DateTime? ConcluidoEm { get; set; }
+    public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+    public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
+
+    public Usuario? Cliente { get; set; }
+    public Usuario? Prestador { get; set; }
+    public Cobranca? Cobranca { get; set; }
+    public ICollection<MensagemServico> Mensagens { get; set; } = [];
+}

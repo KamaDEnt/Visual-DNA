@@ -1,0 +1,49 @@
+<div class="minha-area">
+  <header class="cabecalho">
+    <h1>Minha Área</h1>
+    <button (click)="sair()" class="btn-sair">Sair</button>
+  </header>
+
+  <section class="perfil">
+    <h2>Bem-vindo, {{ usuario()?.nome }}</h2>
+    <p>{{ usuario()?.email }} · {{ usuario()?.tipoConta }}</p>
+  </section>
+
+  @if (usuario()?.tipoConta === 'prestador') {
+    <section class="dados-bancarios">
+      <h3>Dados Bancários (Pix)</h3>
+
+      @if (mensagem()) {
+        <p class="mensagem">{{ mensagem() }}</p>
+      }
+
+      <form [formGroup]="formularioBanking" (ngSubmit)="salvarBanking()">
+        <div class="campo">
+          <label>Tipo de chave Pix</label>
+          <select formControlName="tipoChavePix">
+            <option value="cpf">CPF</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="email">E-mail</option>
+            <option value="telefone">Telefone</option>
+            <option value="aleatoria">Chave aleatória</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Chave Pix</label>
+          <input type="text" formControlName="chavePix" />
+        </div>
+        <div class="campo">
+          <label>Nome completo</label>
+          <input type="text" formControlName="nomeCompleto" />
+        </div>
+        <div class="campo">
+          <label>CPF / CNPJ</label>
+          <input type="text" formControlName="cpfCnpj" />
+        </div>
+        <button type="submit" [disabled]="salvando()">
+          {{ salvando() ? 'Salvando...' : 'Salvar dados bancários' }}
+        </button>
+      </form>
+    </section>
+  }
+</div>

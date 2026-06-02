@@ -1,0 +1,119 @@
+<div class="painel-admin">
+  <h1>Painel Administrativo</h1>
+
+  <nav class="abas">
+    <button [class.ativa]="abaSelecionada() === 'stats'" (click)="abaSelecionada.set('stats')">Estatísticas</button>
+    <button [class.ativa]="abaSelecionada() === 'servicos'" (click)="abaSelecionada.set('servicos')">Serviços</button>
+    <button [class.ativa]="abaSelecionada() === 'usuarios'" (click)="abaSelecionada.set('usuarios')">Usuários</button>
+    <button [class.ativa]="abaSelecionada() === 'financeiro'" (click)="abaSelecionada.set('financeiro')">Financeiro</button>
+  </nav>
+
+  @if (abaSelecionada() === 'stats' && estatisticas()) {
+    <section class="stats">
+      <div class="card-stat">
+        <h3>Usuários</h3>
+        <p class="numero">{{ estatisticas()!.usuarios.total }}</p>
+        <p>{{ estatisticas()!.usuarios.clientes }} clientes · {{ estatisticas()!.usuarios.prestadores }} prestadores</p>
+      </div>
+      <div class="card-stat">
+        <h3>Serviços</h3>
+        <p class="numero">{{ estatisticas()!.servicos.total }}</p>
+        <p>{{ estatisticas()!.servicos.pendentes }} pendentes · {{ estatisticas()!.servicos.concluidos }} concluídos</p>
+      </div>
+      <div class="card-stat">
+        <h3>Receita</h3>
+        <p class="numero">R$ {{ estatisticas()!.receita.ganha | number:'1.2-2' }}</p>
+        <p>GMV: R$ {{ estatisticas()!.receita.gmv | number:'1.2-2' }}</p>
+      </div>
+    </section>
+  }
+
+  @if (abaSelecionada() === 'servicos') {
+    <section class="tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (servico of servicos(); track servico.id) {
+            <tr>
+              <td>{{ servico.titulo }}</td>
+              <td>{{ servico.categoria }}</td>
+              <td>R$ {{ servico.preco }}</td>
+              <td>
+                <span class="badge badge-{{ servico.status }}">{{ rotularStatus(servico.status) }}</span>
+              </td>
+              <td>
+                @if (servico.status === 'pending_approval') {
+                  <button (click)="atualizarStatus(servico.id, 'in_progress')">Iniciar</button>
+                }
+                @if (servico.status === 'in_progress') {
+                  <button (click)="atualizarStatus(servico.id, 'completed')">Concluir</button>
+                  <button class="btn-cancelar" (click)="atualizarStatus(servico.id, 'cancelled')">Cancelar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  @if (abaSelecionada() === 'usuarios') {
+    <section class="tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Tipo</th>
+            <th>Cadastrado em</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of usuarios(); track usuario.id) {
+            <tr>
+              <td>{{ usuario.nome }}</td>
+              <td>{{ usuario.email }}</td>
+              <td>{{ usuario.tipoConta }}</td>
+              <td>{{ usuario.criadoEm | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  @if (abaSelecionada() === 'financeiro') {
+    <section class="tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Serviço</th>
+            <th>Valor Total</th>
+            <th>Taxa Admin</th>
+            <th>Valor Prestador</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cobranca of listaCobrancas(); track cobranca.id) {
+            <tr>
+              <td>{{ cobranca.servico?.titulo ?? '—' }}</td>
+              <td>R$ {{ cobranca.valorTotal }}</td>
+              <td>R$ {{ cobranca.taxaAdmin }}</td>
+              <td>R$ {{ cobranca.valorPrestador }}</td>
+              <td>{{ cobranca.status }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>

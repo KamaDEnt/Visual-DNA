@@ -1,0 +1,13 @@
+﻿using Prontto.Domain.Entities;
+using Prontto.Domain.Enums;
+
+namespace Prontto.Domain.Interfaces;
+
+public interface IRepositorioCobranca
+{
+    Task<IReadOnlyList<Cobranca>> ListarTodosAsync();
+    Task<decimal> SomarTaxaAdminPorStatusAsync(StatusCobranca status);
+    Task<decimal> SomarValorTotalPorStatusAsync(StatusCobranca status);
+    Task<bool> ExistePorServicoAsync(Guid idServico);
+    Task<Cobranca> AdicionarAsync(Cobranca cobranca);
+}

@@ -1,49 +1,70 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# compiled output
-dist
-tmp
-out-tsc
+# ── Node.js / TypeScript ──────────────────────────────────────────────────────
+node_modules/
+dist/
+tmp/
+out-tsc/
 *.tsbuildinfo
 .expo
 .expo-shared
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
 
-# dependencies
-node_modules
+# ── .NET / C# ─────────────────────────────────────────────────────────────────
+backend/src/**/bin/
+backend/src/**/obj/
+backend/tests/**/bin/
+backend/tests/**/obj/
+*.user
+*.suo
+.vs/
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# ── Angular ───────────────────────────────────────────────────────────────────
+frontend/dist/
+frontend/.angular/
+frontend/node_modules/
+frontend/coverage/
 
-# IDE - VSCode
+# ── Ambiente / segredos ───────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+
+# ── IDEs e editores ───────────────────────────────────────────────────────────
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+*.sublime-workspace
+*.launch
+.settings/
+.project
+.classpath
+.c9/
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# ── Sistema ───────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+*.log
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+/.sass-cache
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
 
-# Replit
+# ── Outros ────────────────────────────────────────────────────────────────────
 .cache/
 .local/
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

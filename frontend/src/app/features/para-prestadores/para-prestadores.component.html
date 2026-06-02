@@ -1,0 +1,19 @@
+<div class="para-prestadores">
+  <section class="hero">
+    <h1>Cresça seu negócio com o Prontto</h1>
+    <p>Conectamos você a quem precisa dos seus serviços</p>
+    <a routerLink="/cadastrar" class="btn-cta">Cadastrar como prestador</a>
+  </section>
+
+  <section class="beneficios">
+    <h2>Por que usar o Prontto?</h2>
+    <div class="grade">
+      @for (beneficio of beneficios; track beneficio.titulo) {
+        <div class="card">
+          <h3>{{ beneficio.titulo }}</h3>
+          <p>{{ beneficio.descricao }}</p>
+        </div>
+      }
+    </div>
+  </section>
+</div>
