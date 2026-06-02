@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 interface Categoria {
@@ -21,8 +21,9 @@ interface Passo {
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit, OnDestroy {
   readonly passoAtivo = signal(0);
+  private intervalo: ReturnType<typeof setInterval> | null = null;
 
   readonly passos: Passo[] = [
     {
@@ -66,7 +67,34 @@ export class HomeComponent {
 
   readonly passoAtualDados = computed(() => this.passos[this.passoAtivo()]);
 
+  ngOnInit(): void {
+    this.iniciarAvanco();
+  }
+
+  ngOnDestroy(): void {
+    this.pararAvanco();
+  }
+
   selecionarPasso(index: number): void {
     this.passoAtivo.set(index);
+    this.reiniciarAvanco();
+  }
+
+  private iniciarAvanco(): void {
+    this.intervalo = setInterval(() => {
+      this.passoAtivo.update(atual => (atual + 1) % this.passos.length);
+    }, 10000);
+  }
+
+  private pararAvanco(): void {
+    if (this.intervalo !== null) {
+      clearInterval(this.intervalo);
+      this.intervalo = null;
+    }
+  }
+
+  private reiniciarAvanco(): void {
+    this.pararAvanco();
+    this.iniciarAvanco();
   }
 }
