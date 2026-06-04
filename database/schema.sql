@@ -101,20 +101,20 @@ CREATE TYPE tipo_notificacao AS ENUM (
 );
 
 -- ------------------------------------------------------------
--- 2. FUNÇÃO AUXILIAR: atualizar updated_at automaticamente
+-- 2. FUNÇÃO AUXILIAR: atualizar atualizado_em automaticamente
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql AS
 $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.atualizado_em = NOW();
     RETURN NEW;
 END;
 $$;
 
 COMMENT ON FUNCTION fn_set_updated_at() IS
-    'Trigger genérico para manter updated_at sincronizado em qualquer UPDATE.';
+    'Trigger genérico para manter atualizado_em sincronizado em qualquer UPDATE.';
 
 -- ============================================================
 --  TABELAS
@@ -128,10 +128,10 @@ COMMENT ON FUNCTION fn_set_updated_at() IS
 -- ============================================================
 CREATE TABLE categorias (
     id              UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    name            TEXT        NOT NULL,
+    nome            TEXT        NOT NULL,
     slug            TEXT        NOT NULL,
-    active          BOOLEAN     NOT NULL DEFAULT TRUE,
-    display_order   INTEGER     NOT NULL DEFAULT 0,
+    ativo          BOOLEAN     NOT NULL DEFAULT TRUE,
+    ordem_exibicao   INTEGER     NOT NULL DEFAULT 0,
 
     -- PK
     CONSTRAINT pk_categorias
@@ -143,15 +143,15 @@ CREATE TABLE categorias (
 
     -- Domínio
     CONSTRAINT ck_categorias_display_order
-        CHECK (display_order >= 0),
+        CHECK (ordem_exibicao >= 0),
     CONSTRAINT ck_categorias_slug_format
         CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 
 COMMENT ON TABLE  categorias                IS 'Catálogo canônico de categorias. FK obrigatório — nunca string livre.';
 COMMENT ON COLUMN categorias.slug           IS 'Kebab-case único. Ex: encanador, eletricista. Imutável após uso em produção.';
-COMMENT ON COLUMN categorias.active         IS 'Categorias inativas não aparecem na busca ou no cadastro de prestadores.';
-COMMENT ON COLUMN categorias.display_order  IS 'Ordena a exibição no frontend.';
+COMMENT ON COLUMN categorias.ativo         IS 'Categorias inativas não aparecem na busca ou no cadastro de prestadores.';
+COMMENT ON COLUMN categorias.ordem_exibicao  IS 'Ordena a exibição no frontend.';
 
 -- ============================================================
 --  cidades
@@ -160,10 +160,10 @@ COMMENT ON COLUMN categorias.display_order  IS 'Ordena a exibição no frontend.
 -- ============================================================
 CREATE TABLE cidades (
     id      UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    name    TEXT        NOT NULL,
-    state   CHAR(2)     NOT NULL,
+    nome    TEXT        NOT NULL,
+    estado   CHAR(2)     NOT NULL,
     slug    TEXT        NOT NULL,
-    active  BOOLEAN     NOT NULL DEFAULT TRUE,
+    ativo  BOOLEAN     NOT NULL DEFAULT TRUE,
 
     CONSTRAINT pk_cidades
         PRIMARY KEY (id),
@@ -172,45 +172,45 @@ CREATE TABLE cidades (
         UNIQUE (slug),
 
     CONSTRAINT ck_cidades_state
-        CHECK (state ~ '^[A-Z]{2}$'),
+        CHECK (estado ~ '^[A-Z]{2}$'),
     CONSTRAINT ck_cidades_slug_format
         CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 
 COMMENT ON TABLE  cidades        IS 'Cidades cobertas pela plataforma. FK obrigatório — nunca string livre.';
-COMMENT ON COLUMN cidades.state  IS 'Sigla da UF em maiúsculas. Ex: SP, RJ, MG.';
+COMMENT ON COLUMN cidades.estado  IS 'Sigla da UF em maiúsculas. Ex: SP, RJ, MG.';
 COMMENT ON COLUMN cidades.slug   IS 'Kebab-case único. Ex: itapevi, sao-paulo. Compõe a URL pública do prestador.';
 
 -- ============================================================
 --  usuarios
 --  Todos os usuários: clientes, prestadores e admins.
---  Soft delete via deleted_at.
+--  Soft delete via deletado_em.
 -- ============================================================
 CREATE TABLE usuarios (
     id                  UUID            NOT NULL DEFAULT uuid_generate_v4(),
-    name                TEXT            NOT NULL,
+    nome                TEXT            NOT NULL,
     email               TEXT            NOT NULL,
-    phone               TEXT,
-    password_hash       TEXT            NOT NULL,
-    account_type        tipo_conta      NOT NULL,
-    role                papel           NOT NULL DEFAULT 'usuario',
+    telefone               TEXT,
+    hash_senha       TEXT            NOT NULL,
+    tipo_conta        tipo_conta      NOT NULL,
+    papel                papel           NOT NULL DEFAULT 'usuario',
 
     -- Campos de prestador
-    specialty           TEXT,                               -- legado; preferir usuarios_categorias
-    city_id             UUID,                               -- cidade principal (FK → cidades)
+    especialidade           TEXT,                               -- legado; preferir usuarios_categorias
+    cidade_id             UUID,                               -- cidade principal (FK → cidades)
     cpf                 TEXT,                               -- AES-256 na aplicação (LGPD)
-    profile_photo_url   TEXT,
+    url_foto_perfil   TEXT,
     slug                TEXT,                               -- imutável após publicação
-    description         TEXT,
+    descricao         TEXT,
 
     -- Métricas calculadas
-    rating_average      NUMERIC(3,2)    NOT NULL DEFAULT 0.00,
-    rating_count        INTEGER         NOT NULL DEFAULT 0,
+    media_avaliacoes      NUMERIC(3,2)    NOT NULL DEFAULT 0.00,
+    total_avaliacoes        INTEGER         NOT NULL DEFAULT 0,
 
     -- Auditoria de linha
-    created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    deleted_at          TIMESTAMPTZ,                        -- soft delete
+    criado_em          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    atualizado_em          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    deletado_em          TIMESTAMPTZ,                        -- soft delete
 
     -- PK
     CONSTRAINT pk_usuarios
@@ -224,31 +224,31 @@ CREATE TABLE usuarios (
 
     -- Domínio
     CONSTRAINT ck_usuarios_rating_average
-        CHECK (rating_average BETWEEN 0 AND 5),
+        CHECK (media_avaliacoes BETWEEN 0 AND 5),
     CONSTRAINT ck_usuarios_rating_count
-        CHECK (rating_count >= 0),
+        CHECK (total_avaliacoes >= 0),
     CONSTRAINT ck_usuarios_email_format
         CHECK (email = LOWER(email)),
 
     -- FK
     CONSTRAINT fk_usuarios_city
-        FOREIGN KEY (city_id) REFERENCES cidades(id) ON DELETE SET NULL
+        FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE SET NULL
 );
 
 -- Índices: busca pública e login (filtro soft delete)
 CREATE UNIQUE INDEX uq_usuarios_email_active
-    ON usuarios(email) WHERE deleted_at IS NULL;
+    ON usuarios(email) WHERE deletado_em IS NULL;
 
 CREATE UNIQUE INDEX uq_usuarios_slug_active
-    ON usuarios(slug) WHERE deleted_at IS NULL AND slug IS NOT NULL;
+    ON usuarios(slug) WHERE deletado_em IS NULL AND slug IS NOT NULL;
 
 CREATE INDEX ix_usuarios_account_type
-    ON usuarios(account_type) WHERE deleted_at IS NULL;
+    ON usuarios(tipo_conta) WHERE deletado_em IS NULL;
 
 CREATE INDEX ix_usuarios_city_id
-    ON usuarios(city_id) WHERE deleted_at IS NULL;
+    ON usuarios(cidade_id) WHERE deletado_em IS NULL;
 
--- Trigger updated_at
+-- Trigger atualizado_em
 CREATE TRIGGER trg_usuarios_updated_at
     BEFORE UPDATE ON usuarios
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
@@ -256,9 +256,9 @@ CREATE TRIGGER trg_usuarios_updated_at
 COMMENT ON TABLE  usuarios                 IS 'Usuários da plataforma: clientes, prestadores e admins.';
 COMMENT ON COLUMN usuarios.cpf             IS 'Armazenado criptografado via AES-256 na camada de aplicação (LGPD). Nunca retornar em endpoints públicos.';
 COMMENT ON COLUMN usuarios.slug            IS 'Identificador único legível para URL pública. IMUTÁVEL após publicação do perfil (ADR-09). Formato: nome-sobrenome-xxxx.';
-COMMENT ON COLUMN usuarios.specialty       IS 'Campo legado. Preferir usuarios_categorias para categorias estruturadas.';
-COMMENT ON COLUMN usuarios.rating_average  IS 'Recalculado pelo job após cada nova avaliação. Não atualizar manualmente.';
-COMMENT ON COLUMN usuarios.deleted_at      IS 'Soft delete. Filtro global do EF Core exclui registros com valor preenchido. Dados financeiros são preservados por obrigação legal.';
+COMMENT ON COLUMN usuarios.especialidade       IS 'Campo legado. Preferir usuarios_categorias para categorias estruturadas.';
+COMMENT ON COLUMN usuarios.media_avaliacoes  IS 'Recalculado pelo job após cada nova avaliação. Não atualizar manualmente.';
+COMMENT ON COLUMN usuarios.deletado_em      IS 'Soft delete. Filtro global do EF Core exclui registros com valor preenchido. Dados financeiros são preservados por obrigação legal.';
 
 -- ============================================================
 --  tokens_renovacao
@@ -267,14 +267,14 @@ COMMENT ON COLUMN usuarios.deleted_at      IS 'Soft delete. Filtro global do EF 
 -- ============================================================
 CREATE TABLE tokens_renovacao (
     id                  UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    user_id             UUID        NOT NULL,
+    usuario_id             UUID        NOT NULL,
     token               TEXT        NOT NULL,   -- hash SHA-256 do valor bruto
-    expires_at          TIMESTAMPTZ NOT NULL,
-    revoked_at          TIMESTAMPTZ,
-    replaced_by_token   TEXT,                   -- hash do token sucessor (rastreabilidade)
-    ip_address          TEXT,
+    expira_em          TIMESTAMPTZ NOT NULL,
+    revogado_em          TIMESTAMPTZ,
+    substituido_por   TEXT,                   -- hash do token sucessor (rastreabilidade)
+    endereco_ip          TEXT,
     user_agent          TEXT,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    criado_em          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_tokens_renovacao
         PRIMARY KEY (id),
@@ -283,25 +283,25 @@ CREATE TABLE tokens_renovacao (
         UNIQUE (token),
 
     CONSTRAINT ck_tokens_renovacao_expiry
-        CHECK (expires_at > created_at),
+        CHECK (expira_em > criado_em),
 
     CONSTRAINT fk_tokens_renovacao_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 -- Sessões ativas de um usuário (renovação, logout)
 CREATE INDEX ix_tokens_renovacao_user_active
-    ON tokens_renovacao(user_id, expires_at)
-    WHERE revoked_at IS NULL;
+    ON tokens_renovacao(usuario_id, expira_em)
+    WHERE revogado_em IS NULL;
 
 -- Job de limpeza de tokens expirados
 CREATE INDEX ix_tokens_renovacao_expires_at
-    ON tokens_renovacao(expires_at)
-    WHERE revoked_at IS NULL;
+    ON tokens_renovacao(expira_em)
+    WHERE revogado_em IS NULL;
 
 COMMENT ON TABLE  tokens_renovacao                    IS 'Tokens de renovação de sessão. Rotação obrigatória a cada uso. Hash SHA-256 armazenado — nunca o valor bruto.';
 COMMENT ON COLUMN tokens_renovacao.token              IS 'SHA-256 do Refresh Token. O valor bruto trafega apenas no cookie HttpOnly; Secure; SameSite=Strict.';
-COMMENT ON COLUMN tokens_renovacao.replaced_by_token  IS 'Hash do token sucessor após rotação. Permite detectar reuso de token revogado (sinal de comprometimento).';
+COMMENT ON COLUMN tokens_renovacao.substituido_por  IS 'Hash do token sucessor após rotação. Permite detectar reuso de token revogado (sinal de comprometimento).';
 
 -- ============================================================
 --  usuarios_categorias
@@ -309,21 +309,21 @@ COMMENT ON COLUMN tokens_renovacao.replaced_by_token  IS 'Hash do token sucessor
 --  Cardinalidade: 1 usuário — N categorias.
 -- ============================================================
 CREATE TABLE usuarios_categorias (
-    user_id     UUID    NOT NULL,
-    category_id UUID    NOT NULL,
+    usuario_id     UUID    NOT NULL,
+    categoria_id UUID    NOT NULL,
 
     CONSTRAINT pk_usuarios_categorias
-        PRIMARY KEY (user_id, category_id),
+        PRIMARY KEY (usuario_id, categoria_id),
 
     CONSTRAINT fk_usuarios_categorias_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_usuarios_categorias_category
-        FOREIGN KEY (category_id) REFERENCES categorias(id) ON DELETE RESTRICT
+        FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE RESTRICT
 );
 
 CREATE INDEX ix_usuarios_categorias_category_id
-    ON usuarios_categorias(category_id);
+    ON usuarios_categorias(categoria_id);
 
 COMMENT ON TABLE usuarios_categorias IS 'Categorias de atuação do prestador. FK para categorias — nunca string livre.';
 
@@ -333,94 +333,94 @@ COMMENT ON TABLE usuarios_categorias IS 'Categorias de atuação do prestador. F
 --  Cardinalidade: 1 usuário — N cidades.
 -- ============================================================
 CREATE TABLE usuarios_cidades (
-    user_id  UUID    NOT NULL,
-    city_id  UUID    NOT NULL,
+    usuario_id  UUID    NOT NULL,
+    cidade_id  UUID    NOT NULL,
 
     CONSTRAINT pk_usuarios_cidades
-        PRIMARY KEY (user_id, city_id),
+        PRIMARY KEY (usuario_id, cidade_id),
 
     CONSTRAINT fk_usuarios_cidades_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_usuarios_cidades_city
-        FOREIGN KEY (city_id) REFERENCES cidades(id) ON DELETE RESTRICT
+        FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE RESTRICT
 );
 
 CREATE INDEX ix_usuarios_cidades_city_id
-    ON usuarios_cidades(city_id);
+    ON usuarios_cidades(cidade_id);
 
 COMMENT ON TABLE usuarios_cidades IS 'Cidades de atuação do prestador. FK para cidades — substitui campos city/city_slug em texto livre.';
 
 -- ============================================================
 --  imagens_portfolio
 --  Imagens de portfólio do prestador hospedadas no Cloudinary.
---  Soft delete via deleted_at.
+--  Soft delete via deletado_em.
 -- ============================================================
 CREATE TABLE imagens_portfolio (
     id                      UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    user_id                 UUID        NOT NULL,
+    usuario_id                 UUID        NOT NULL,
     url                     TEXT        NOT NULL,
     cloudinary_public_id    TEXT        NOT NULL,
-    moderated               BOOLEAN     NOT NULL DEFAULT FALSE,
-    approved                BOOLEAN,                -- NULL=pendente, TRUE=aprovada, FALSE=rejeitada
-    display_order           INTEGER     NOT NULL DEFAULT 0,
-    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at              TIMESTAMPTZ,
+    moderado               BOOLEAN     NOT NULL DEFAULT FALSE,
+    aprovado                BOOLEAN,                -- NULL=pendente, TRUE=aprovada, FALSE=rejeitada
+    ordem_exibicao           INTEGER     NOT NULL DEFAULT 0,
+    criado_em              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deletado_em              TIMESTAMPTZ,
 
     CONSTRAINT pk_imagens_portfolio
         PRIMARY KEY (id),
 
     CONSTRAINT ck_imagens_portfolio_display_order
-        CHECK (display_order >= 0),
+        CHECK (ordem_exibicao >= 0),
 
     CONSTRAINT fk_imagens_portfolio_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_imagens_portfolio_user_active
-    ON imagens_portfolio(user_id, display_order)
-    WHERE deleted_at IS NULL AND approved = TRUE;
+    ON imagens_portfolio(usuario_id, ordem_exibicao)
+    WHERE deletado_em IS NULL AND aprovado = TRUE;
 
 -- Job de moderação (busca imagens pendentes)
 CREATE INDEX ix_imagens_portfolio_pending_moderation
-    ON imagens_portfolio(created_at)
-    WHERE moderated = FALSE AND deleted_at IS NULL;
+    ON imagens_portfolio(criado_em)
+    WHERE moderado = FALSE AND deletado_em IS NULL;
 
 -- Job de limpeza de orphans (rejeitadas há > 7 dias)
 CREATE INDEX ix_imagens_portfolio_rejected
-    ON imagens_portfolio(created_at)
-    WHERE approved = FALSE AND deleted_at IS NULL;
+    ON imagens_portfolio(criado_em)
+    WHERE aprovado = FALSE AND deletado_em IS NULL;
 
-COMMENT ON TABLE  imagens_portfolio          IS 'Imagens de trabalhos do prestador. Exibidas somente após approved = TRUE.';
-COMMENT ON COLUMN imagens_portfolio.approved IS 'NULL = pendente de moderação. TRUE = aprovada pelo Cloudinary. FALSE = rejeitada; arquivo deve ser deletado do Cloudinary pelo job de limpeza.';
+COMMENT ON TABLE  imagens_portfolio          IS 'Imagens de trabalhos do prestador. Exibidas somente após aprovado = TRUE.';
+COMMENT ON COLUMN imagens_portfolio.aprovado IS 'NULL = pendente de moderação. TRUE = aprovada pelo Cloudinary. FALSE = rejeitada; arquivo deve ser deletado do Cloudinary pelo job de limpeza.';
 
 -- ============================================================
 --  dados_bancarios
 --  Dados PIX e bancários do prestador para recebimento.
---  Cardinalidade: 1 usuário — 1 registro (unique user_id).
+--  Cardinalidade: 1 usuário — 1 registro (unique usuario_id).
 -- ============================================================
 CREATE TABLE dados_bancarios (
     id              UUID            NOT NULL DEFAULT uuid_generate_v4(),
-    user_id         UUID            NOT NULL,
-    pix_key_type    tipo_chave_pix  NOT NULL,
-    pix_key         TEXT            NOT NULL,
-    full_name       TEXT            NOT NULL,
+    usuario_id         UUID            NOT NULL,
+    tipo_chave_pix    tipo_chave_pix  NOT NULL,
+    chave_pix         TEXT            NOT NULL,
+    nome_completo       TEXT            NOT NULL,
     cpf_cnpj        TEXT            NOT NULL,   -- AES-256 na aplicação (LGPD)
-    bank_name       TEXT,
-    agency          TEXT,
-    account_number  TEXT,
-    account_type    TEXT,
-    created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    nome_banco       TEXT,
+    agencia          TEXT,
+    numero_conta  TEXT,
+    tipo_conta    TEXT,
+    criado_em      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    atualizado_em      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_dados_bancarios
         PRIMARY KEY (id),
 
     CONSTRAINT uq_dados_bancarios_user_id
-        UNIQUE (user_id),
+        UNIQUE (usuario_id),
 
     CONSTRAINT fk_dados_bancarios_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
 );
 
 CREATE TRIGGER trg_dados_bancarios_updated_at
@@ -429,136 +429,136 @@ CREATE TRIGGER trg_dados_bancarios_updated_at
 
 COMMENT ON TABLE  dados_bancarios          IS 'Dados bancários e PIX do prestador. Acesso restrito ao próprio prestador e admin (LGPD).';
 COMMENT ON COLUMN dados_bancarios.cpf_cnpj IS 'AES-256 via camada de aplicação. Nunca retornado em endpoints públicos.';
-COMMENT ON COLUMN dados_bancarios.pix_key  IS 'Valor da chave Pix conforme pix_key_type.';
+COMMENT ON COLUMN dados_bancarios.chave_pix  IS 'Valor da chave Pix conforme tipo_chave_pix.';
 
 -- ============================================================
 --  servicos
 --  Agregado central da plataforma.
 --  Representa a ordem de serviço do início ao fim.
---  Soft delete via deleted_at.
+--  Soft delete via deletado_em.
 -- ============================================================
 CREATE TABLE servicos (
     id                              UUID            NOT NULL DEFAULT uuid_generate_v4(),
-    title                           TEXT            NOT NULL,
-    description                     TEXT,
-    category_id                     UUID            NOT NULL,
-    city_id                         UUID,
-    client_id                       UUID,
-    provider_id                     UUID,
-    price                           NUMERIC(12,2)   NOT NULL DEFAULT 0,
-    admin_fee_rate                  NUMERIC(6,4)    NOT NULL DEFAULT 0.2000,
+    titulo                           TEXT            NOT NULL,
+    descricao                     TEXT,
+    categoria_id                     UUID            NOT NULL,
+    cidade_id                         UUID,
+    cliente_id                       UUID,
+    prestador_id                     UUID,
+    preco                           NUMERIC(12,2)   NOT NULL DEFAULT 0,
+    taxa_admin_percentual                  NUMERIC(6,4)    NOT NULL DEFAULT 0.2000,
     status                          status_servico  NOT NULL DEFAULT 'em_negociacao',
-    address                         TEXT,
-    scheduled_at                    TIMESTAMPTZ,
-    completed_at                    TIMESTAMPTZ,
-    awaiting_confirmation_since     TIMESTAMPTZ,
-    created_at                      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    updated_at                      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    deleted_at                      TIMESTAMPTZ,
+    endereco                         TEXT,
+    agendado_em                    TIMESTAMPTZ,
+    concluido_em                    TIMESTAMPTZ,
+    aguardando_confirmacao_desde     TIMESTAMPTZ,
+    criado_em                      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    atualizado_em                      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    deletado_em                      TIMESTAMPTZ,
 
     CONSTRAINT pk_servicos
         PRIMARY KEY (id),
 
     -- Domínio
     CONSTRAINT ck_servicos_price
-        CHECK (price >= 0),
+        CHECK (preco >= 0),
     CONSTRAINT ck_servicos_admin_fee_rate
-        CHECK (admin_fee_rate BETWEEN 0 AND 1),
+        CHECK (taxa_admin_percentual BETWEEN 0 AND 1),
     CONSTRAINT ck_servicos_completed_at
-        CHECK (completed_at IS NULL OR completed_at >= created_at),
+        CHECK (concluido_em IS NULL OR concluido_em >= criado_em),
     CONSTRAINT ck_servicos_awaiting_confirmation
         CHECK (
-            (status = 'aguardando_confirmacao_cliente' AND awaiting_confirmation_since IS NOT NULL)
+            (status = 'aguardando_confirmacao_cliente' AND aguardando_confirmacao_desde IS NOT NULL)
             OR (status != 'aguardando_confirmacao_cliente')
         ),
 
     -- FK
     CONSTRAINT fk_servicos_category
-        FOREIGN KEY (category_id) REFERENCES categorias(id) ON DELETE RESTRICT,
+        FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE RESTRICT,
     CONSTRAINT fk_servicos_city
-        FOREIGN KEY (city_id) REFERENCES cidades(id) ON DELETE SET NULL,
+        FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE SET NULL,
     CONSTRAINT fk_servicos_client
-        FOREIGN KEY (client_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+        FOREIGN KEY (cliente_id) REFERENCES usuarios(id) ON DELETE SET NULL,
     CONSTRAINT fk_servicos_provider
-        FOREIGN KEY (provider_id) REFERENCES usuarios(id) ON DELETE SET NULL
+        FOREIGN KEY (prestador_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- Serviços do cliente
 CREATE INDEX ix_servicos_client_id
-    ON servicos(client_id, created_at DESC) WHERE deleted_at IS NULL;
+    ON servicos(cliente_id, criado_em DESC) WHERE deletado_em IS NULL;
 
 -- Serviços do prestador
 CREATE INDEX ix_servicos_provider_id
-    ON servicos(provider_id, created_at DESC) WHERE deleted_at IS NULL;
+    ON servicos(prestador_id, criado_em DESC) WHERE deletado_em IS NULL;
 
 -- Filtro por status (admin, painéis)
 CREATE INDEX ix_servicos_status
-    ON servicos(status, created_at DESC) WHERE deleted_at IS NULL;
+    ON servicos(status, criado_em DESC) WHERE deletado_em IS NULL;
 
 -- Busca por categoria/cidade
 CREATE INDEX ix_servicos_category_id
-    ON servicos(category_id) WHERE deleted_at IS NULL;
+    ON servicos(categoria_id) WHERE deletado_em IS NULL;
 CREATE INDEX ix_servicos_city_id
-    ON servicos(city_id) WHERE deleted_at IS NULL;
+    ON servicos(cidade_id) WHERE deletado_em IS NULL;
 
 -- CRÍTICO: job de auto-conclusão em 7 dias (JobConclusaoAutomatica)
 CREATE INDEX ix_servicos_awaiting_confirmation
-    ON servicos(awaiting_confirmation_since)
+    ON servicos(aguardando_confirmacao_desde)
     WHERE status = 'aguardando_confirmacao_cliente'
-      AND awaiting_confirmation_since IS NOT NULL
-      AND deleted_at IS NULL;
+      AND aguardando_confirmacao_desde IS NOT NULL
+      AND deletado_em IS NULL;
 
 -- Solicitações disponíveis para prestadores (sem provider vinculado)
 CREATE INDEX ix_servicos_available_for_providers
-    ON servicos(category_id, city_id, created_at DESC)
+    ON servicos(categoria_id, cidade_id, criado_em DESC)
     WHERE status = 'em_negociacao'
-      AND provider_id IS NULL
-      AND deleted_at IS NULL;
+      AND prestador_id IS NULL
+      AND deletado_em IS NULL;
 
 -- Disputas ativas
 CREATE INDEX ix_servicos_em_disputa
     ON servicos(id)
-    WHERE status = 'em_disputa' AND deleted_at IS NULL;
+    WHERE status = 'em_disputa' AND deletado_em IS NULL;
 
 CREATE TRIGGER trg_servicos_updated_at
     BEFORE UPDATE ON servicos
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
 
 COMMENT ON TABLE  servicos                              IS 'Agregado central da plataforma. Ciclo completo: negociação → pagamento → execução → conclusão.';
-COMMENT ON COLUMN servicos.price                        IS 'NUMERIC(12,2) — nunca double/float. Valor final acordado entre as partes.';
-COMMENT ON COLUMN servicos.admin_fee_rate               IS 'Taxa da plataforma. Padrão 0.2000 (20%). Registrado no serviço para histórico imutável.';
-COMMENT ON COLUMN servicos.awaiting_confirmation_since  IS 'Preenchido ao entrar em awaiting_confirmation_client. Base para o JobConclusaoAutomatica (7 dias).';
-COMMENT ON COLUMN servicos.deleted_at                   IS 'Soft delete. Serviços com histórico financeiro preservados por obrigação legal.';
+COMMENT ON COLUMN servicos.preco                        IS 'NUMERIC(12,2) — nunca double/float. Valor final acordado entre as partes.';
+COMMENT ON COLUMN servicos.taxa_admin_percentual               IS 'Taxa da plataforma. Padrão 0.2000 (20%). Registrado no serviço para histórico imutável.';
+COMMENT ON COLUMN servicos.aguardando_confirmacao_desde  IS 'Preenchido ao entrar em awaiting_confirmation_client. Base para o JobConclusaoAutomatica (7 dias).';
+COMMENT ON COLUMN servicos.deletado_em                   IS 'Soft delete. Serviços com histórico financeiro preservados por obrigação legal.';
 
 -- ============================================================
 --  cobrancas
 --  Ciclo financeiro de um serviço.
---  1 serviço → 1 cobrança (unique service_id).
+--  1 serviço → 1 cobrança (unique servico_id).
 -- ============================================================
 CREATE TABLE cobrancas (
     id                  UUID                NOT NULL DEFAULT uuid_generate_v4(),
-    service_id          UUID                NOT NULL,
-    total_amount        NUMERIC(12,2)       NOT NULL,
-    admin_fee           NUMERIC(12,2)       NOT NULL,
-    provider_amount     NUMERIC(12,2)       NOT NULL,
+    servico_id          UUID                NOT NULL,
+    valor_total        NUMERIC(12,2)       NOT NULL,
+    taxa_admin           NUMERIC(12,2)       NOT NULL,
+    valor_prestador     NUMERIC(12,2)       NOT NULL,
     status              status_cobranca     NOT NULL DEFAULT 'pendente',
     pagarme_order_id    TEXT,
     pagarme_payment_id  TEXT,
     pix_qr_code         TEXT,
     pix_copia_cola      TEXT,
-    pix_expires_at      TIMESTAMPTZ,
-    paid_at             TIMESTAMPTZ,
-    held_at             TIMESTAMPTZ,
-    released_at         TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    pix_expira_em      TIMESTAMPTZ,
+    pago_em             TIMESTAMPTZ,
+    retido_em             TIMESTAMPTZ,
+    liberado_em         TIMESTAMPTZ,
+    criado_em          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    atualizado_em          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_cobrancas
         PRIMARY KEY (id),
 
     -- 1:1 com serviço
     CONSTRAINT uq_cobrancas_service_id
-        UNIQUE (service_id),
+        UNIQUE (servico_id),
 
     -- Idempotência de webhook (ADR-10, §9 Job 6)
     CONSTRAINT uq_cobrancas_pagarme_order_id
@@ -566,36 +566,36 @@ CREATE TABLE cobrancas (
 
     -- Domínio financeiro
     CONSTRAINT ck_cobrancas_total_amount
-        CHECK (total_amount > 0),
+        CHECK (valor_total > 0),
     CONSTRAINT ck_cobrancas_admin_fee
-        CHECK (admin_fee >= 0),
+        CHECK (taxa_admin >= 0),
     CONSTRAINT ck_cobrancas_provider_amount
-        CHECK (provider_amount >= 0),
+        CHECK (valor_prestador >= 0),
     CONSTRAINT ck_cobrancas_amounts_consistency
-        CHECK (ABS(total_amount - admin_fee - provider_amount) < 0.01),
+        CHECK (ABS(valor_total - taxa_admin - valor_prestador) < 0.01),
 
     -- Timestamps ordenados logicamente
     CONSTRAINT ck_cobrancas_held_after_paid
-        CHECK (held_at IS NULL OR paid_at IS NULL OR held_at >= paid_at),
+        CHECK (retido_em IS NULL OR pago_em IS NULL OR retido_em >= pago_em),
     CONSTRAINT ck_cobrancas_released_after_held
-        CHECK (released_at IS NULL OR held_at IS NULL OR released_at >= held_at),
+        CHECK (liberado_em IS NULL OR retido_em IS NULL OR liberado_em >= retido_em),
 
     CONSTRAINT fk_cobrancas_service
-        FOREIGN KEY (service_id) REFERENCES servicos(id) ON DELETE RESTRICT
+        FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT
 );
 
 -- CRÍTICO: job de expiração de PIX (JobExpiracaoPix)
 CREATE INDEX ix_cobrancas_pix_expiry
-    ON cobrancas(pix_expires_at)
-    WHERE status = 'pendente' AND pix_expires_at IS NOT NULL;
+    ON cobrancas(pix_expira_em)
+    WHERE status = 'pendente' AND pix_expira_em IS NOT NULL;
 
 -- Filtros por status (admin, extrato)
 CREATE INDEX ix_cobrancas_status
-    ON cobrancas(status, created_at DESC);
+    ON cobrancas(status, criado_em DESC);
 
 -- Cobranças retidas (monitoramento de repasse pendente)
 CREATE INDEX ix_cobrancas_retidas
-    ON cobrancas(held_at)
+    ON cobrancas(retido_em)
     WHERE status = 'retido';
 
 CREATE TRIGGER trg_cobrancas_updated_at
@@ -603,11 +603,11 @@ CREATE TRIGGER trg_cobrancas_updated_at
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
 
 COMMENT ON TABLE  cobrancas                       IS 'Transação financeira de um serviço. Criada quando serviço avança para aguardando_pagamento.';
-COMMENT ON COLUMN cobrancas.admin_fee             IS 'total_amount × admin_fee_rate do serviço associado. Calculado na criação, imutável.';
-COMMENT ON COLUMN cobrancas.provider_amount       IS 'total_amount − admin_fee. Valor transferido ao prestador após conclusão.';
+COMMENT ON COLUMN cobrancas.taxa_admin             IS 'valor_total × taxa_admin_percentual do serviço associado. Calculado na criação, imutável.';
+COMMENT ON COLUMN cobrancas.valor_prestador       IS 'valor_total − taxa_admin. Valor transferido ao prestador após conclusão.';
 COMMENT ON COLUMN cobrancas.pagarme_order_id      IS 'UNIQUE garante idempotência: webhooks duplicados da Pagar.me não reprocessam.';
-COMMENT ON COLUMN cobrancas.held_at               IS 'Preenchido quando PIX confirmado. Valor sob custódia da plataforma (ADR-10).';
-COMMENT ON COLUMN cobrancas.released_at           IS 'Preenchido após split 80/20 executado via IProcessadorPagamento.TransferirAsync().';
+COMMENT ON COLUMN cobrancas.retido_em               IS 'Preenchido quando PIX confirmado. Valor sob custódia da plataforma (ADR-10).';
+COMMENT ON COLUMN cobrancas.liberado_em           IS 'Preenchido após split 80/20 executado via IProcessadorPagamento.TransferirAsync().';
 
 -- ============================================================
 --  mensagens_servico
@@ -616,16 +616,16 @@ COMMENT ON COLUMN cobrancas.released_at           IS 'Preenchido após split 80/
 -- ============================================================
 CREATE TABLE mensagens_servico (
     id                  UUID                NOT NULL DEFAULT uuid_generate_v4(),
-    service_id          UUID                NOT NULL,
-    sender_id           UUID,                               -- NULL para mensagens de sistema
-    sender_role         papel_remetente     NOT NULL,
-    message_type        tipo_mensagem       NOT NULL,
-    content             TEXT                NOT NULL,
-    proposal_amount     NUMERIC(12,2),
-    proposal_status     status_proposta,
-    image_moderated     BOOLEAN             NOT NULL DEFAULT FALSE,
-    image_approved      BOOLEAN,
-    created_at          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    servico_id          UUID                NOT NULL,
+    remetente_id           UUID,                               -- NULL para mensagens de sistema
+    papel_remetente         papel_remetente     NOT NULL,
+    tipo_mensagem        tipo_mensagem       NOT NULL,
+    conteudo             TEXT                NOT NULL,
+    valor_proposta     NUMERIC(12,2),
+    status_proposta     status_proposta,
+    imagem_moderada     BOOLEAN             NOT NULL DEFAULT FALSE,
+    imagem_aprovada      BOOLEAN,
+    criado_em          TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_mensagens_servico
         PRIMARY KEY (id),
@@ -633,39 +633,39 @@ CREATE TABLE mensagens_servico (
     -- Proposta exige valor e status
     CONSTRAINT ck_mensagens_servico_proposal_fields
         CHECK (
-            (message_type = 'proposta' AND proposal_amount IS NOT NULL AND proposal_amount > 0 AND proposal_status IS NOT NULL)
-            OR (message_type != 'proposta' AND proposal_amount IS NULL AND proposal_status IS NULL)
+            (tipo_mensagem = 'proposta' AND valor_proposta IS NOT NULL AND valor_proposta > 0 AND status_proposta IS NOT NULL)
+            OR (tipo_mensagem != 'proposta' AND valor_proposta IS NULL AND status_proposta IS NULL)
         ),
 
     -- Moderação de imagem somente em mensagens do tipo imagem
     CONSTRAINT ck_mensagens_servico_image_fields
         CHECK (
-            message_type = 'imagem'
-            OR (image_moderated = FALSE AND image_approved IS NULL)
+            tipo_mensagem = 'imagem'
+            OR (imagem_moderada = FALSE AND imagem_aprovada IS NULL)
         ),
 
     CONSTRAINT fk_mensagens_servico_service
-        FOREIGN KEY (service_id) REFERENCES servicos(id) ON DELETE RESTRICT,
+        FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT,
     CONSTRAINT fk_mensagens_servico_sender
-        FOREIGN KEY (sender_id) REFERENCES usuarios(id) ON DELETE SET NULL
+        FOREIGN KEY (remetente_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- PRINCIPAL: paginação cursor-based do chat (afterId / afterCreatedAt)
 CREATE INDEX ix_mensagens_servico_chat_cursor
-    ON mensagens_servico(service_id, created_at ASC, id ASC);
+    ON mensagens_servico(servico_id, criado_em ASC, id ASC);
 
 -- CRÍTICO: somente 1 proposta pendente por serviço (ADR-04)
 CREATE UNIQUE INDEX uq_mensagens_servico_pending_proposal
-    ON mensagens_servico(service_id)
-    WHERE message_type = 'proposta' AND proposal_status = 'pendente';
+    ON mensagens_servico(servico_id)
+    WHERE tipo_mensagem = 'proposta' AND status_proposta = 'pendente';
 
 -- Moderação: imagens pendentes
 CREATE INDEX ix_mensagens_servico_pending_moderation
-    ON mensagens_servico(service_id, created_at)
-    WHERE message_type = 'imagem' AND image_moderated = FALSE;
+    ON mensagens_servico(servico_id, criado_em)
+    WHERE tipo_mensagem = 'imagem' AND imagem_moderada = FALSE;
 
 COMMENT ON TABLE  mensagens_servico                  IS 'Chat do serviço. Texto, imagens e propostas num único stream (ADR-04).';
-COMMENT ON COLUMN mensagens_servico.sender_id        IS 'NULL para mensagens de sistema (mudanças de status, eventos automáticos).';
+COMMENT ON COLUMN mensagens_servico.remetente_id        IS 'NULL para mensagens de sistema (mudanças de status, eventos automáticos).';
 COMMENT ON INDEX  uq_mensagens_servico_pending_proposal IS 'Garante máximo 1 proposta pendente por serviço a qualquer momento.';
 
 -- ============================================================
@@ -675,104 +675,104 @@ COMMENT ON INDEX  uq_mensagens_servico_pending_proposal IS 'Garante máximo 1 pr
 -- ============================================================
 CREATE TABLE avaliacoes (
     id          UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    service_id  UUID        NOT NULL,
-    reviewer_id UUID        NOT NULL,
-    reviewed_id UUID        NOT NULL,
-    rating      SMALLINT    NOT NULL,
-    comment     TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    servico_id  UUID        NOT NULL,
+    avaliador_id UUID        NOT NULL,
+    avaliado_id UUID        NOT NULL,
+    nota      SMALLINT    NOT NULL,
+    comentario     TEXT,
+    criado_em  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_avaliacoes
         PRIMARY KEY (id),
 
     -- 1 avaliação por pessoa por serviço
     CONSTRAINT uq_avaliacoes_service_reviewer
-        UNIQUE (service_id, reviewer_id),
+        UNIQUE (servico_id, avaliador_id),
 
     -- Domínio
     CONSTRAINT ck_avaliacoes_rating
-        CHECK (rating BETWEEN 1 AND 5),
+        CHECK (nota BETWEEN 1 AND 5),
     CONSTRAINT ck_avaliacoes_comment_length
-        CHECK (comment IS NULL OR LENGTH(comment) <= 1000),
+        CHECK (comentario IS NULL OR LENGTH(comentario) <= 1000),
     CONSTRAINT ck_avaliacoes_self_review
-        CHECK (reviewer_id != reviewed_id),
+        CHECK (avaliador_id != avaliado_id),
 
     CONSTRAINT fk_avaliacoes_service
-        FOREIGN KEY (service_id) REFERENCES servicos(id) ON DELETE RESTRICT,
+        FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT,
     CONSTRAINT fk_avaliacoes_reviewer
-        FOREIGN KEY (reviewer_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+        FOREIGN KEY (avaliador_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
     CONSTRAINT fk_avaliacoes_reviewed
-        FOREIGN KEY (reviewed_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+        FOREIGN KEY (avaliado_id) REFERENCES usuarios(id) ON DELETE RESTRICT
 );
 
 -- Avaliações recebidas por um usuário (cálculo de média)
 CREATE INDEX ix_avaliacoes_reviewed_id
-    ON avaliacoes(reviewed_id, created_at DESC);
+    ON avaliacoes(avaliado_id, criado_em DESC);
 
 -- Avaliações de um serviço específico
 CREATE INDEX ix_avaliacoes_service_id
-    ON avaliacoes(service_id);
+    ON avaliacoes(servico_id);
 
-COMMENT ON TABLE  avaliacoes                       IS 'Avaliação bilateral pós-conclusão. Constraint unique(service_id, reviewer_id) impede avaliação dupla.';
-COMMENT ON COLUMN avaliacoes.rating                IS 'SMALLINT 1-5. Reforçado por CHECK constraint.';
-COMMENT ON COLUMN avaliacoes.comment               IS 'Opcional. Máximo 1000 caracteres.';
+COMMENT ON TABLE  avaliacoes                       IS 'Avaliação bilateral pós-conclusão. Constraint unique(servico_id, avaliador_id) impede avaliação dupla.';
+COMMENT ON COLUMN avaliacoes.nota                IS 'SMALLINT 1-5. Reforçado por CHECK constraint.';
+COMMENT ON COLUMN avaliacoes.comentario               IS 'Opcional. Máximo 1000 caracteres.';
 
 -- ============================================================
 --  disputas
 --  Contestação de conclusão aberta pelo cliente.
---  1 disputa por serviço (unique service_id).
+--  1 disputa por serviço (unique servico_id).
 -- ============================================================
 CREATE TABLE disputas (
     id              UUID            NOT NULL DEFAULT uuid_generate_v4(),
-    service_id      UUID            NOT NULL,
-    opened_by_id    UUID            NOT NULL,
-    reason          TEXT            NOT NULL,
-    description     TEXT,
+    servico_id      UUID            NOT NULL,
+    aberto_por_id    UUID            NOT NULL,
+    motivo          TEXT            NOT NULL,
+    descricao     TEXT,
     status          status_disputa  NOT NULL DEFAULT 'aberta',
-    resolved_by_id  UUID,
-    admin_decision  TEXT,
-    created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    resolved_at     TIMESTAMPTZ,
+    resolvido_por_id  UUID,
+    decisao_admin  TEXT,
+    criado_em      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    resolvido_em     TIMESTAMPTZ,
 
     CONSTRAINT pk_disputas
         PRIMARY KEY (id),
 
     -- 1 disputa por serviço
     CONSTRAINT uq_disputas_service_id
-        UNIQUE (service_id),
+        UNIQUE (servico_id),
 
     -- Resolução exige todos os campos de decisão
     CONSTRAINT ck_disputas_resolution_fields
         CHECK (
             (status IN ('resolvida_cliente', 'resolvida_prestador')
-                AND resolved_by_id IS NOT NULL
-                AND admin_decision IS NOT NULL
-                AND resolved_at IS NOT NULL)
+                AND resolvido_por_id IS NOT NULL
+                AND decisao_admin IS NOT NULL
+                AND resolvido_em IS NOT NULL)
             OR status NOT IN ('resolvida_cliente', 'resolvida_prestador')
         ),
 
     CONSTRAINT ck_disputas_resolved_at_order
-        CHECK (resolved_at IS NULL OR resolved_at >= created_at),
+        CHECK (resolvido_em IS NULL OR resolvido_em >= criado_em),
 
     CONSTRAINT fk_disputas_service
-        FOREIGN KEY (service_id) REFERENCES servicos(id) ON DELETE RESTRICT,
+        FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT,
     CONSTRAINT fk_disputas_opened_by
-        FOREIGN KEY (opened_by_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+        FOREIGN KEY (aberto_por_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
     CONSTRAINT fk_disputas_resolved_by
-        FOREIGN KEY (resolved_by_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+        FOREIGN KEY (resolvido_por_id) REFERENCES usuarios(id) ON DELETE RESTRICT
 );
 
 -- Disputas abertas/em análise (fila do admin)
 CREATE INDEX ix_disputas_open
-    ON disputas(created_at ASC)
+    ON disputas(criado_em ASC)
     WHERE status IN ('aberta', 'em_analise');
 
 CREATE INDEX ix_disputas_opened_by_id
-    ON disputas(opened_by_id);
+    ON disputas(aberto_por_id);
 
 COMMENT ON TABLE  disputas                  IS 'Contestação de conclusão. Criada pelo cliente de AguardandoConfirmacaoCliente. Pagamento permanece retido até resolução.';
-COMMENT ON COLUMN disputas.reason           IS 'Motivo selecionado pelo cliente. Ex: serviço não executado, qualidade insatisfatória.';
-COMMENT ON COLUMN disputas.admin_decision   IS 'Obrigatório ao resolver. Justificativa textual gravada no AuditLog.';
+COMMENT ON COLUMN disputas.motivo           IS 'Motivo selecionado pelo cliente. Ex: serviço não executado, qualidade insatisfatória.';
+COMMENT ON COLUMN disputas.decisao_admin   IS 'Obrigatório ao resolver. Justificativa textual gravada no AuditLog.';
 
 -- ============================================================
 --  notificacoes
@@ -780,77 +780,77 @@ COMMENT ON COLUMN disputas.admin_decision   IS 'Obrigatório ao resolver. Justif
 -- ============================================================
 CREATE TABLE notificacoes (
     id           UUID                NOT NULL DEFAULT uuid_generate_v4(),
-    user_id      UUID                NOT NULL,
-    title        TEXT                NOT NULL,
-    message      TEXT                NOT NULL,
-    read         BOOLEAN             NOT NULL DEFAULT FALSE,
-    type         tipo_notificacao    NOT NULL,
-    reference_id TEXT,
-    created_at   TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    usuario_id      UUID                NOT NULL,
+    titulo        TEXT                NOT NULL,
+    mensagem      TEXT                NOT NULL,
+    lido         BOOLEAN             NOT NULL DEFAULT FALSE,
+    tipo         tipo_notificacao    NOT NULL,
+    referencia_id TEXT,
+    criado_em   TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_notificacoes
         PRIMARY KEY (id),
 
     CONSTRAINT fk_notificacoes_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 -- PRINCIPAL: não-lidas por usuário (polling a cada 10s no frontend)
 CREATE INDEX ix_notificacoes_user_unread
-    ON notificacoes(user_id, created_at DESC)
-    WHERE read = FALSE;
+    ON notificacoes(usuario_id, criado_em DESC)
+    WHERE lido = FALSE;
 
 -- Listagem geral por usuário
 CREATE INDEX ix_notificacoes_user_all
-    ON notificacoes(user_id, created_at DESC);
+    ON notificacoes(usuario_id, criado_em DESC);
 
 COMMENT ON TABLE  notificacoes             IS 'Notificações in-app. Geradas por handlers de eventos de domínio (V1: polling 10s; V2: SignalR).';
-COMMENT ON COLUMN notificacoes.type        IS 'Enum tipo_notificacao. Permite filtrar por categoria de evento no frontend.';
-COMMENT ON COLUMN notificacoes.reference_id IS 'ID da entidade relacionada (ServicoId, DisputaId, etc.) para deep linking.';
+COMMENT ON COLUMN notificacoes.tipo        IS 'Enum tipo_notificacao. Permite filtrar por categoria de evento no frontend.';
+COMMENT ON COLUMN notificacoes.referencia_id IS 'ID da entidade relacionada (ServicoId, DisputaId, etc.) para deep linking.';
 
 -- ============================================================
 --  logs_auditoria
 --  Trilha de auditoria imutável (append-only).
---  NUNCA deletar registros. Sem trigger updated_at.
+--  NUNCA deletar registros. Sem trigger atualizado_em.
 -- ============================================================
 CREATE TABLE logs_auditoria (
     id          UUID        NOT NULL DEFAULT uuid_generate_v4(),
-    user_id     UUID,                           -- NULL para ações de job/sistema
-    action      TEXT        NOT NULL,
-    entity      TEXT        NOT NULL,
-    entity_id   TEXT,
-    ip_address  TEXT,
+    usuario_id     UUID,                           -- NULL para ações de job/sistema
+    acao      TEXT        NOT NULL,
+    entidade      TEXT        NOT NULL,
+    entidade_id   TEXT,
+    endereco_ip  TEXT,
     user_agent  TEXT,
-    details     JSONB,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    detalhes     JSONB,
+    criado_em  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_logs_auditoria
         PRIMARY KEY (id),
 
     CONSTRAINT fk_logs_auditoria_user
-        FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- Auditoria por usuário (admin: "o que esse usuário fez?")
 CREATE INDEX ix_logs_auditoria_user_created
-    ON logs_auditoria(user_id, created_at DESC);
+    ON logs_auditoria(usuario_id, criado_em DESC);
 
 -- Auditoria por entidade (admin: "quem mexeu nesse serviço?")
 CREATE INDEX ix_logs_auditoria_entity
-    ON logs_auditoria(entity, entity_id, created_at DESC);
+    ON logs_auditoria(entidade, entidade_id, criado_em DESC);
 
 -- Listagem cronológica geral
 CREATE INDEX ix_logs_auditoria_created_at
-    ON logs_auditoria(created_at DESC);
+    ON logs_auditoria(criado_em DESC);
 
 -- Busca por tipo de ação
 CREATE INDEX ix_logs_auditoria_action
-    ON logs_auditoria(action, created_at DESC);
+    ON logs_auditoria(acao, criado_em DESC);
 
 COMMENT ON TABLE  logs_auditoria            IS 'Trilha de auditoria IMUTÁVEL. Registros NUNCA devem ser deletados. Tabela append-only.';
-COMMENT ON COLUMN logs_auditoria.user_id    IS 'NULL para ações de jobs. Actions de job prefixadas com "job.". Ex: job.conclusao_automatica.';
-COMMENT ON COLUMN logs_auditoria.action     IS 'Ação no formato entidade.verbo. Ex: usuario.login, servico.criado, pagamento.liberado.';
-COMMENT ON COLUMN logs_auditoria.details    IS 'JSONB: contexto adicional, campos alterados, valores anteriores. Flexível por tipo de ação.';
+COMMENT ON COLUMN logs_auditoria.usuario_id    IS 'NULL para ações de jobs. Actions de job prefixadas com "job.". Ex: job.conclusao_automatica.';
+COMMENT ON COLUMN logs_auditoria.acao     IS 'Ação no formato entidade.verbo. Ex: usuario.login, servico.criado, pagamento.liberado.';
+COMMENT ON COLUMN logs_auditoria.detalhes    IS 'JSONB: contexto adicional, campos alterados, valores anteriores. Flexível por tipo de ação.';
 
 -- ============================================================
 --  VIEWS — Queries frequentes pré-compiladas
@@ -860,48 +860,48 @@ COMMENT ON COLUMN logs_auditoria.details    IS 'JSONB: contexto adicional, campo
 CREATE OR REPLACE VIEW vw_prestadores_publicos AS
 SELECT
     u.id,
-    u.name,
+    u.nome,
     u.slug,
-    u.description,
-    u.profile_photo_url,
-    u.rating_average,
-    u.rating_count,
-    ci.id       AS city_id,
+    u.descricao,
+    u.url_foto_perfil,
+    u.media_avaliacoes,
+    u.total_avaliacoes,
+    ci.id       AS cidade_id,
     ci.slug     AS city_slug,
-    ci.name     AS city_name,
-    ci.state    AS city_state,
-    cat.id      AS category_id,
+    ci.nome     AS city_name,
+    ci.estado    AS city_state,
+    cat.id      AS categoria_id,
     cat.slug    AS category_slug,
-    cat.name    AS category_name
+    cat.nome    AS category_name
 FROM usuarios u
-JOIN usuarios_cidades    uc  ON uc.user_id    = u.id
-JOIN cidades         ci  ON ci.id         = uc.city_id
-JOIN usuarios_categorias uca ON uca.user_id  = u.id
-JOIN categorias     cat ON cat.id        = uca.category_id
-WHERE u.account_type    = 'prestador'
-  AND u.deleted_at      IS NULL
-  AND ci.active         = TRUE
-  AND cat.active        = TRUE;
+JOIN usuarios_cidades    uc  ON uc.usuario_id    = u.id
+JOIN cidades         ci  ON ci.id         = uc.cidade_id
+JOIN usuarios_categorias uca ON uca.usuario_id  = u.id
+JOIN categorias     cat ON cat.id        = uca.categoria_id
+WHERE u.tipo_conta    = 'prestador'
+  AND u.deletado_em      IS NULL
+  AND ci.ativo         = TRUE
+  AND cat.ativo        = TRUE;
 
 COMMENT ON VIEW vw_prestadores_publicos IS 'Prestadores ativos com cidades e categorias. Base para a busca pública /{cidadeSlug}/{categoriaSlug}/{slug}.';
 
 -- Serviços que atingiram 7 dias sem resposta (JobConclusaoAutomatica)
 CREATE OR REPLACE VIEW vw_servicos_para_autoconclusao AS
 SELECT
-    s.id            AS service_id,
-    s.provider_id,
-    s.client_id,
-    s.awaiting_confirmation_since,
-    s.price,
-    s.admin_fee_rate,
+    s.id            AS servico_id,
+    s.prestador_id,
+    s.cliente_id,
+    s.aguardando_confirmacao_desde,
+    s.preco,
+    s.taxa_admin_percentual,
     c.id            AS charge_id,
-    c.provider_amount
+    c.valor_prestador
 FROM servicos s
-JOIN cobrancas  c ON c.service_id = s.id
+JOIN cobrancas  c ON c.servico_id = s.id
 WHERE s.status = 'aguardando_confirmacao_cliente'
-  AND s.awaiting_confirmation_since IS NOT NULL
-  AND s.awaiting_confirmation_since < NOW() - INTERVAL '7 days'
-  AND s.deleted_at IS NULL
+  AND s.aguardando_confirmacao_desde IS NOT NULL
+  AND s.aguardando_confirmacao_desde < NOW() - INTERVAL '7 days'
+  AND s.deletado_em IS NULL
   AND c.status = 'retido';
 
 COMMENT ON VIEW vw_servicos_para_autoconclusao IS 'Serviços prontos para auto-conclusão. Consumida pelo JobConclusaoAutomatica (execução a cada hora).';
@@ -910,13 +910,13 @@ COMMENT ON VIEW vw_servicos_para_autoconclusao IS 'Serviços prontos para auto-c
 CREATE OR REPLACE VIEW vw_cobrancas_pix_expirado AS
 SELECT
     c.id            AS charge_id,
-    c.service_id,
-    c.pix_expires_at,
+    c.servico_id,
+    c.pix_expira_em,
     c.pagarme_order_id
 FROM cobrancas c
 WHERE c.status       = 'pendente'
-  AND c.pix_expires_at IS NOT NULL
-  AND c.pix_expires_at < NOW();
+  AND c.pix_expira_em IS NOT NULL
+  AND c.pix_expira_em < NOW();
 
 COMMENT ON VIEW vw_cobrancas_pix_expirado IS 'Cobranças com PIX vencido ainda pendentes. Consumida pelo JobExpiracaoPix (execução a cada 15 min).';
 
@@ -924,15 +924,15 @@ COMMENT ON VIEW vw_cobrancas_pix_expirado IS 'Cobranças com PIX vencido ainda p
 CREATE OR REPLACE VIEW vw_cobrancas_retidas_alerta AS
 SELECT
     c.id            AS charge_id,
-    c.service_id,
-    c.provider_amount,
-    c.held_at,
-    s.provider_id
+    c.servico_id,
+    c.valor_prestador,
+    c.retido_em,
+    s.prestador_id
 FROM cobrancas  c
-JOIN servicos s ON s.id = c.service_id
+JOIN servicos s ON s.id = c.servico_id
 WHERE c.status   = 'retido'
   AND s.status   = 'concluido'
-  AND c.held_at  < NOW() - INTERVAL '24 hours';
+  AND c.retido_em  < NOW() - INTERVAL '24 hours';
 
 COMMENT ON VIEW vw_cobrancas_retidas_alerta IS 'Cobranças retidas com serviço já concluído há mais de 24h sem liberação. Base para alertas de monitoramento (Risco 1).';
 
@@ -940,17 +940,17 @@ COMMENT ON VIEW vw_cobrancas_retidas_alerta IS 'Cobranças retidas com serviço 
 CREATE OR REPLACE VIEW vw_sessoes_ativas AS
 SELECT
     rt.id,
-    rt.user_id,
-    u.name          AS user_name,
+    rt.usuario_id,
+    u.nome          AS user_name,
     u.email,
-    rt.ip_address,
+    rt.endereco_ip,
     rt.user_agent,
-    rt.created_at,
-    rt.expires_at
+    rt.criado_em,
+    rt.expira_em
 FROM tokens_renovacao rt
-JOIN usuarios u ON u.id = rt.user_id
-WHERE rt.revoked_at IS NULL
-  AND rt.expires_at > NOW();
+JOIN usuarios u ON u.id = rt.usuario_id
+WHERE rt.revogado_em IS NULL
+  AND rt.expira_em > NOW();
 
 COMMENT ON VIEW vw_sessoes_ativas IS 'Sessões ativas na plataforma. Admin pode revogar individualmente.';
 
@@ -958,7 +958,7 @@ COMMENT ON VIEW vw_sessoes_ativas IS 'Sessões ativas na plataforma. Admin pode 
 --  SEED DATA — Categorias e Cidades iniciais
 -- ============================================================
 
-INSERT INTO categorias (id, name, slug, active, display_order) VALUES
+INSERT INTO categorias (id, nome, slug, ativo, ordem_exibicao) VALUES
     (uuid_generate_v4(), 'Encanador',           'encanador',        TRUE,  1),
     (uuid_generate_v4(), 'Eletricista',          'eletricista',       TRUE,  2),
     (uuid_generate_v4(), 'Pintor',               'pintor',            TRUE,  3),
@@ -970,7 +970,7 @@ INSERT INTO categorias (id, name, slug, active, display_order) VALUES
     (uuid_generate_v4(), 'Serralheiro',          'serralheiro',       TRUE,  9),
     (uuid_generate_v4(), 'Dedetizador',          'dedetizador',       TRUE, 10);
 
-INSERT INTO cidades (id, name, state, slug, active) VALUES
+INSERT INTO cidades (id, nome, estado, slug, ativo) VALUES
     (uuid_generate_v4(), 'Itapevi',        'SP', 'itapevi',         TRUE),
     (uuid_generate_v4(), 'São Paulo',      'SP', 'sao-paulo',       TRUE),
     (uuid_generate_v4(), 'Osasco',         'SP', 'osasco',          TRUE),
@@ -988,23 +988,23 @@ INSERT INTO cidades (id, name, state, slug, active) VALUES
 
 -- PAGINAÇÃO
 -- • Listagens (serviços, usuários, cobranças): OFFSET/LIMIT com max 50/página
---   SELECT ... ORDER BY created_at DESC, id DESC LIMIT $limit OFFSET $offset
+--   SELECT ... ORDER BY criado_em DESC, id DESC LIMIT $limit OFFSET $offset
 -- • Chat (mensagens_servico): cursor-based para evitar drift
---   WHERE (created_at, id) < ($cursor_ts, $cursor_id)
---   ORDER BY created_at DESC, id DESC LIMIT 50
+--   WHERE (criado_em, id) < ($cursor_ts, $cursor_id)
+--   ORDER BY criado_em DESC, id DESC LIMIT 50
 -- • Audit logs: cursor-based (tabela de alto volume)
 
 -- SOFT DELETE
 -- • Tabelas: usuarios, servicos, imagens_portfolio
--- • Filtro automático via EF Core Global Query Filter (deleted_at IS NULL)
+-- • Filtro automático via EF Core Global Query Filter (deletado_em IS NULL)
 -- • Para acesso direto ao PostgreSQL em produção, ativar RLS se necessário:
 --   ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
---   CREATE POLICY p_usuarios_active ON usuarios USING (deleted_at IS NULL);
+--   CREATE POLICY p_usuarios_active ON usuarios USING (deletado_em IS NULL);
 
 -- AUDITORIA
 -- • logs_auditoria é append-only. Nunca executar DELETE ou UPDATE nesta tabela.
 -- • Arquivamento LGPD: após 90 dias, logs podem ser movidos para tabela de arquivo frio.
--- • Recomendado: particionamento por RANGE em created_at (mensal) quando > 10M registros.
+-- • Recomendado: particionamento por RANGE em criado_em (mensal) quando > 10M registros.
 
 -- PERFORMANCE
 -- • max_connections = 100 (configurar pool no EF Core: Max Pool Size=100)
@@ -1014,8 +1014,8 @@ INSERT INTO cidades (id, name, state, slug, active) VALUES
 -- • Monitorar BLOAT em cobrancas e mensagens_servico com pgstattuple
 
 -- PARTICIONAMENTO (considerar após 10M registros)
--- • logs_auditoria: RANGE em created_at (mensal)
--- • mensagens_servico: RANGE em created_at (mensal)
--- • notificacoes: RANGE em created_at + política de expiração (30 dias)
+-- • logs_auditoria: RANGE em criado_em (mensal)
+-- • mensagens_servico: RANGE em criado_em (mensal)
+-- • notificacoes: RANGE em criado_em + política de expiração (30 dias)
 
 -- FIM DO SCHEMA

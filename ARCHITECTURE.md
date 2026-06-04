@@ -131,23 +131,23 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK, UUID v4 |
-| `Nome` | `string` | `name` | Obrigatório |
+| `Nome` | `string` | `nome` | Obrigatório |
 | `Email` | `string` | `email` | Único, lowercase |
-| `Telefone` | `string?` | `phone` | Opcional |
-| `HashSenha` | `string` | `password_hash` | BCrypt |
-| `TipoConta` | `TipoConta` | `account_type` | `cliente` / `prestador` |
-| `Papel` | `Papel` | `role` | `usuario` / `admin` |
-| `Especialidade` | `string?` | `specialty` | Texto livre (legacy — manter para compatibilidade) |
-| `CidadeId` | `Guid?` | `city_id` | FK → `cities.id` (substitui `city` texto livre) |
+| `Telefone` | `string?` | `telefone` | Opcional |
+| `HashSenha` | `string` | `hash_senha` | BCrypt |
+| `TipoConta` | `TipoConta` | `tipo_conta` | `cliente` / `prestador` |
+| `Papel` | `Papel` | `papel` | `usuario` / `admin` |
+| `Especialidade` | `string?` | `especialidade` | Texto livre (legacy — manter para compatibilidade) |
+| `CidadeId` | `Guid?` | `cidade_id` | FK → `cities.id` (substitui `city` texto livre) |
 | `Cpf` | `string?` | `cpf` | 11 dígitos, único quando preenchido; armazenado criptografado (AES-256) |
-| `FotoPerfilUrl` | `string?` | `profile_photo_url` | URL Cloudinary |
+| `FotoPerfilUrl` | `string?` | `url_foto_perfil` | URL Cloudinary |
 | `Slug` | `string?` | `slug` | Único global, gerado ao completar perfil; **imutável após publicação** |
-| `Descricao` | `string?` | `description` | Bio pública do prestador |
-| `MediaAvaliacoes` | `decimal` | `rating_average` | Calculado via job após cada avaliação |
-| `TotalAvaliacoes` | `int` | `rating_count` | Contagem |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `AtualizadoEm` | `DateTime` | `updated_at` | UTC |
-| `DeletadoEm` | `DateTime?` | `deleted_at` | UTC — soft delete; filtro global EF Core exclui registros com valor preenchido |
+| `Descricao` | `string?` | `descricao` | Bio pública do prestador |
+| `MediaAvaliacoes` | `decimal` | `media_avaliacoes` | Calculado via job após cada avaliação |
+| `TotalAvaliacoes` | `int` | `total_avaliacoes` | Contagem |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `AtualizadoEm` | `DateTime` | `atualizado_em` | UTC |
+| `DeletadoEm` | `DateTime?` | `deletado_em` | UTC — soft delete; filtro global EF Core exclui registros com valor preenchido |
 
 **Relacionamentos**:
 - 1:N com `Servico` (como cliente)
@@ -171,22 +171,22 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `Titulo` | `string` | `title` | Obrigatório |
-| `Descricao` | `string?` | `description` | Opcional |
-| `CategoriaId` | `Guid` | `category_id` | FK → `categories.id` (nunca string livre) |
-| `CidadeId` | `Guid?` | `city_id` | FK → `cities.id` (cidade do serviço) |
-| `ClienteId` | `Guid?` | `client_id` | FK → `users.id` |
-| `PrestadorId` | `Guid?` | `provider_id` | FK → `users.id` |
-| `Preco` | `decimal` | `price` | Valor acordado. `decimal`, nunca `double` |
-| `TaxaAdminRate` | `decimal` | `admin_fee_rate` | Padrão `0.2000` |
+| `Titulo` | `string` | `titulo` | Obrigatório |
+| `Descricao` | `string?` | `descricao` | Opcional |
+| `CategoriaId` | `Guid` | `categoria_id` | FK → `categories.id` (nunca string livre) |
+| `CidadeId` | `Guid?` | `cidade_id` | FK → `cities.id` (cidade do serviço) |
+| `ClienteId` | `Guid?` | `cliente_id` | FK → `users.id` |
+| `PrestadorId` | `Guid?` | `prestador_id` | FK → `users.id` |
+| `Preco` | `decimal` | `preco` | Valor acordado. `decimal`, nunca `double` |
+| `TaxaAdminRate` | `decimal` | `taxa_admin_percentual` | Padrão `0.2000` |
 | `Status` | `StatusServico` | `status` | Ver máquina de estados |
-| `Endereco` | `string?` | `address` | Endereço completo de execução |
-| `AgendadoEm` | `DateTime?` | `scheduled_at` | UTC |
-| `ConcluidoEm` | `DateTime?` | `completed_at` | UTC, preenchido na conclusão |
-| `AguardandoConfirmacaoDesde` | `DateTime?` | `awaiting_confirmation_since` | UTC, base para auto-conclusão em 7 dias |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `AtualizadoEm` | `DateTime` | `updated_at` | UTC |
-| `DeletadoEm` | `DateTime?` | `deleted_at` | UTC — soft delete; filtro global EF Core |
+| `Endereco` | `string?` | `endereco` | Endereço completo de execução |
+| `AgendadoEm` | `DateTime?` | `agendado_em` | UTC |
+| `ConcluidoEm` | `DateTime?` | `concluido_em` | UTC, preenchido na conclusão |
+| `AguardandoConfirmacaoDesde` | `DateTime?` | `aguardando_confirmacao_desde` | UTC, base para auto-conclusão em 7 dias |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `AtualizadoEm` | `DateTime` | `atualizado_em` | UTC |
+| `DeletadoEm` | `DateTime?` | `deletado_em` | UTC — soft delete; filtro global EF Core |
 
 **Relacionamentos**:
 - N:1 com `Usuario` (cliente)
@@ -207,21 +207,21 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `ServicoId` | `Guid` | `service_id` | FK único → `services.id` |
-| `ValorTotal` | `decimal` | `total_amount` | Valor acordado |
-| `TaxaAdmin` | `decimal` | `admin_fee` | `ValorTotal * TaxaAdminRate` |
-| `ValorPrestador` | `decimal` | `provider_amount` | `ValorTotal - TaxaAdmin` |
+| `ServicoId` | `Guid` | `servico_id` | FK único → `services.id` |
+| `ValorTotal` | `decimal` | `valor_total` | Valor acordado |
+| `TaxaAdmin` | `decimal` | `taxa_admin` | `ValorTotal * TaxaAdminRate` |
+| `ValorPrestador` | `decimal` | `valor_prestador` | `ValorTotal - TaxaAdmin` |
 | `Status` | `StatusCobranca` | `status` | Ver máquina de estados |
 | `PagarmeOrderId` | `string?` | `pagarme_order_id` | ID do pedido na Pagar.me |
 | `PagarmePagamentoId` | `string?` | `pagarme_payment_id` | ID do pagamento na Pagar.me |
 | `PixQrCode` | `string?` | `pix_qr_code` | QR code base64 ou SVG |
 | `PixCopiaCola` | `string?` | `pix_copia_cola` | Linha digitável PIX |
-| `PixExpiracaoEm` | `DateTime?` | `pix_expires_at` | UTC |
-| `PagadoEm` | `DateTime?` | `paid_at` | UTC |
-| `RetidoEm` | `DateTime?` | `held_at` | UTC, quando PIX confirmado |
-| `LiberadoEm` | `DateTime?` | `released_at` | UTC, quando repasse ao prestador |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `AtualizadoEm` | `DateTime` | `updated_at` | UTC |
+| `PixExpiracaoEm` | `DateTime?` | `pix_expira_em` | UTC |
+| `PagadoEm` | `DateTime?` | `pago_em` | UTC |
+| `RetidoEm` | `DateTime?` | `retido_em` | UTC, quando PIX confirmado |
+| `LiberadoEm` | `DateTime?` | `liberado_em` | UTC, quando repasse ao prestador |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `AtualizadoEm` | `DateTime` | `atualizado_em` | UTC |
 
 **Relacionamentos**:
 - 1:1 com `Servico`
@@ -237,16 +237,16 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `ServicoId` | `Guid` | `service_id` | FK → `services.id` |
-| `RemetenteId` | `Guid?` | `sender_id` | FK → `users.id`, nulo para msgs de sistema |
-| `PapelRemetente` | `PapelRemetente` | `sender_role` | `cliente` / `prestador` / `admin` / `sistema` |
-| `TipoMensagem` | `TipoMensagem` | `message_type` | `texto` / `imagem` / `proposta` / `sistema` |
-| `Conteudo` | `string` | `content` | Texto ou URL Cloudinary moderada |
-| `ValorProposta` | `decimal?` | `proposal_amount` | Preenchido quando `TipoMensagem = Proposta` |
-| `StatusProposta` | `StatusProposta?` | `proposal_status` | `pendente` / `aceita` / `recusada` / `expirada` |
-| `ImagemModerada` | `bool` | `image_moderated` | True após aprovação da moderação |
-| `ImagemAprovada` | `bool?` | `image_approved` | Resultado da moderação |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
+| `ServicoId` | `Guid` | `servico_id` | FK → `services.id` |
+| `RemetenteId` | `Guid?` | `remetente_id` | FK → `users.id`, nulo para msgs de sistema |
+| `PapelRemetente` | `PapelRemetente` | `papel_remetente` | `cliente` / `prestador` / `admin` / `sistema` |
+| `TipoMensagem` | `TipoMensagem` | `tipo_mensagem` | `texto` / `imagem` / `proposta` / `sistema` |
+| `Conteudo` | `string` | `conteudo` | Texto ou URL Cloudinary moderada |
+| `ValorProposta` | `decimal?` | `valor_proposta` | Preenchido quando `TipoMensagem = Proposta` |
+| `StatusProposta` | `StatusProposta?` | `status_proposta` | `pendente` / `aceita` / `recusada` / `expirada` |
+| `ImagemModerada` | `bool` | `imagem_moderada` | True após aprovação da moderação |
+| `ImagemAprovada` | `bool?` | `imagem_aprovada` | Resultado da moderação |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
 
 **Relacionamentos**:
 - N:1 com `Servico`
@@ -263,17 +263,17 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `UsuarioId` | `Guid` | `user_id` | FK único → `users.id` |
-| `TipoChavePix` | `TipoChavePix` | `pix_key_type` | `cpf`/`cnpj`/`email`/`telefone`/`aleatoria` |
-| `ChavePix` | `string` | `pix_key` | Valor da chave |
-| `NomeCompleto` | `string` | `full_name` | Nome completo para TED/DOC |
+| `UsuarioId` | `Guid` | `usuario_id` | FK único → `users.id` |
+| `TipoChavePix` | `TipoChavePix` | `tipo_chave_pix` | `cpf`/`cnpj`/`email`/`telefone`/`aleatoria` |
+| `ChavePix` | `string` | `chave_pix` | Valor da chave |
+| `NomeCompleto` | `string` | `nome_completo` | Nome completo para TED/DOC |
 | `CpfCnpj` | `string` | `cpf_cnpj` | Documento do titular |
-| `NomeBanco` | `string?` | `bank_name` | Nome do banco |
-| `Agencia` | `string?` | `agency` | Agência bancária |
-| `NumeroConta` | `string?` | `account_number` | Conta bancária |
-| `TipoConta` | `string?` | `account_type` | Corrente/Poupança |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `AtualizadoEm` | `DateTime` | `updated_at` | UTC |
+| `NomeBanco` | `string?` | `nome_banco` | Nome do banco |
+| `Agencia` | `string?` | `agencia` | Agência bancária |
+| `NumeroConta` | `string?` | `numero_conta` | Conta bancária |
+| `TipoConta` | `string?` | `tipo_conta` | Corrente/Poupança |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `AtualizadoEm` | `DateTime` | `atualizado_em` | UTC |
 
 **Relacionamentos**:
 - 1:1 com `Usuario`
@@ -289,12 +289,12 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `ServicoId` | `Guid` | `service_id` | FK → `services.id` |
-| `AvaliadorId` | `Guid` | `reviewer_id` | FK → `users.id` |
-| `AvaliadoId` | `Guid` | `reviewed_id` | FK → `users.id` |
-| `Nota` | `int` | `rating` | 1 a 5 (constraint check) |
-| `Comentario` | `string?` | `comment` | Opcional, max 1000 caracteres |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
+| `ServicoId` | `Guid` | `servico_id` | FK → `services.id` |
+| `AvaliadorId` | `Guid` | `avaliador_id` | FK → `users.id` |
+| `AvaliadoId` | `Guid` | `avaliado_id` | FK → `users.id` |
+| `Nota` | `int` | `nota` | 1 a 5 (constraint check) |
+| `Comentario` | `string?` | `comentario` | Opcional, max 1000 caracteres |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
 
 **Constraint**: Unique(`ServicoId`, `AvaliadorId`) — uma avaliação por pessoa por serviço.
 
@@ -313,10 +313,10 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
-| `UsuarioId` | `Guid` | `user_id` | FK → `users.id` |
-| `CategoriaId` | `Guid` | `category_id` | FK → `categories.id` (nunca string livre) |
+| `UsuarioId` | `Guid` | `usuario_id` | FK → `users.id` |
+| `CategoriaId` | `Guid` | `categoria_id` | FK → `categories.id` (nunca string livre) |
 
-**PK composta**: (`user_id`, `category_id`)
+**PK composta**: (`usuario_id`, `categoria_id`)
 
 ---
 
@@ -328,10 +328,10 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
-| `UsuarioId` | `Guid` | `user_id` | FK → `users.id` |
-| `CidadeId` | `Guid` | `city_id` | FK → `cities.id` (substituiu texto livre) |
+| `UsuarioId` | `Guid` | `usuario_id` | FK → `users.id` |
+| `CidadeId` | `Guid` | `cidade_id` | FK → `cities.id` (substituiu texto livre) |
 
-**PK composta**: (`user_id`, `city_id`)
+**PK composta**: (`usuario_id`, `cidade_id`)
 
 ---
 
@@ -344,14 +344,14 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `UsuarioId` | `Guid` | `user_id` | FK → `users.id` |
+| `UsuarioId` | `Guid` | `usuario_id` | FK → `users.id` |
 | `Url` | `string` | `url` | URL pública Cloudinary |
 | `CloudinaryPublicId` | `string` | `cloudinary_public_id` | Para deleção |
-| `Moderada` | `bool` | `moderated` | Default false |
-| `Aprovada` | `bool?` | `approved` | Null = pendente, true = ok, false = rejeitada |
-| `Ordem` | `int` | `display_order` | Ordena exibição |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `DeletadoEm` | `DateTime?` | `deleted_at` | UTC — soft delete; filtro global EF Core |
+| `Moderada` | `bool` | `moderado` | Default false |
+| `Aprovada` | `bool?` | `aprovado` | Null = pendente, true = ok, false = rejeitada |
+| `Ordem` | `int` | `ordem_exibicao` | Ordena exibição |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `DeletadoEm` | `DateTime?` | `deletado_em` | UTC — soft delete; filtro global EF Core |
 
 ---
 
@@ -364,10 +364,10 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `Nome` | `string` | `name` | Ex: "Encanador", "Eletricista" |
+| `Nome` | `string` | `nome` | Ex: "Encanador", "Eletricista" |
 | `Slug` | `string` | `slug` | Único, kebab-case. Ex: `encanador` |
-| `Ativa` | `bool` | `active` | Categorias inativas não aparecem na busca |
-| `Ordem` | `int` | `display_order` | Ordena exibição no frontend |
+| `Ativa` | `bool` | `ativo` | Categorias inativas não aparecem na busca |
+| `Ordem` | `int` | `ordem_exibicao` | Ordena exibição no frontend |
 
 **Constraint**: `UNIQUE(slug)`
 
@@ -382,10 +382,10 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `Nome` | `string` | `name` | Ex: "Itapevi" |
-| `Estado` | `string` | `state` | Sigla UF. Ex: "SP" |
+| `Nome` | `string` | `nome` | Ex: "Itapevi" |
+| `Estado` | `string` | `estado` | Sigla UF. Ex: "SP" |
 | `Slug` | `string` | `slug` | Único, kebab-case. Ex: `itapevi` |
-| `Ativa` | `bool` | `active` | Cidades inativas não aparecem na busca |
+| `Ativa` | `bool` | `ativo` | Cidades inativas não aparecem na busca |
 
 **Constraint**: `UNIQUE(slug)`
 
@@ -400,14 +400,14 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `UsuarioId` | `Guid` | `user_id` | FK → `users.id` |
+| `UsuarioId` | `Guid` | `usuario_id` | FK → `users.id` |
 | `Token` | `string` | `token` | Hash SHA-256 do token (nunca o valor bruto) |
-| `ExpiracaoEm` | `DateTime` | `expires_at` | UTC; padrão `now + 30 dias` |
-| `RevogadoEm` | `DateTime?` | `revoked_at` | UTC; preenchido ao revogar/rotacionar |
-| `SubstituidoPor` | `string?` | `replaced_by_token` | Hash do novo token (rastreabilidade de rotação) |
-| `Ip` | `string?` | `ip_address` | IP do login original |
+| `ExpiracaoEm` | `DateTime` | `expira_em` | UTC; padrão `now + 30 dias` |
+| `RevogadoEm` | `DateTime?` | `revogado_em` | UTC; preenchido ao revogar/rotacionar |
+| `SubstituidoPor` | `string?` | `substituido_por` | Hash do novo token (rastreabilidade de rotação) |
+| `Ip` | `string?` | `endereco_ip` | IP do login original |
 | `UserAgent` | `string?` | `user_agent` | Device fingerprint |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
 
 **Regras**:
 - Ao renovar: token atual → `RevogadoEm = now` + `SubstituidoPor = novoTokenHash`; novo token emitido
@@ -428,14 +428,14 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `UsuarioId` | `Guid?` | `user_id` | FK → `users.id`; nulo para ações de sistema/job |
-| `Acao` | `string` | `action` | Ex: `usuario.login`, `servico.criado`, `pagamento.liberado` |
-| `Entidade` | `string` | `entity` | Nome da entidade afetada. Ex: `Servico`, `Cobranca` |
-| `EntidadeId` | `string?` | `entity_id` | ID da entidade afetada (string para suportar Guid e outros) |
-| `Ip` | `string?` | `ip_address` | IP da requisição |
+| `UsuarioId` | `Guid?` | `usuario_id` | FK → `users.id`; nulo para ações de sistema/job |
+| `Acao` | `string` | `acao` | Ex: `usuario.login`, `servico.criado`, `pagamento.liberado` |
+| `Entidade` | `string` | `entidade` | Nome da entidade afetada. Ex: `Servico`, `Cobranca` |
+| `EntidadeId` | `string?` | `entidade_id` | ID da entidade afetada (string para suportar Guid e outros) |
+| `Ip` | `string?` | `endereco_ip` | IP da requisição |
 | `UserAgent` | `string?` | `user_agent` | Header User-Agent |
-| `Detalhes` | `string?` | `details` | JSON com contexto adicional (campos alterados, motivo) |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
+| `Detalhes` | `string?` | `detalhes` | JSON com contexto adicional (campos alterados, motivo) |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
 
 **Ações obrigatórias a registrar**:
 `usuario.login`, `usuario.logout`, `usuario.cadastro`, `usuario.perfil_alterado`, `dados_bancarios.cadastrado`, `servico.criado`, `proposta.aceita`, `pagamento.confirmado`, `pagamento.liberado`, `servico.cancelado`, `disputa.aberta`, `disputa.resolvida`, `admin.*` (todas as ações administrativas)
@@ -454,15 +454,15 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `ServicoId` | `Guid` | `service_id` | FK único → `services.id`; um serviço tem no máximo uma disputa |
-| `AbertaPorId` | `Guid` | `opened_by_id` | FK → `users.id`; deve ser o cliente |
-| `Motivo` | `string` | `reason` | Motivo selecionado pelo cliente |
-| `Descricao` | `string?` | `description` | Descrição detalhada (opcional) |
+| `ServicoId` | `Guid` | `servico_id` | FK único → `services.id`; um serviço tem no máximo uma disputa |
+| `AbertaPorId` | `Guid` | `aberto_por_id` | FK → `users.id`; deve ser o cliente |
+| `Motivo` | `string` | `motivo` | Motivo selecionado pelo cliente |
+| `Descricao` | `string?` | `descricao` | Descrição detalhada (opcional) |
 | `Status` | `StatusDisputa` | `status` | Ver enum abaixo |
-| `ResolvidaPorId` | `Guid?` | `resolved_by_id` | FK → `users.id`; admin que resolveu |
-| `DecisaoAdmin` | `string?` | `admin_decision` | Justificativa da decisão do admin |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
-| `ResolvidoEm` | `DateTime?` | `resolved_at` | UTC |
+| `ResolvidaPorId` | `Guid?` | `resolvido_por_id` | FK → `users.id`; admin que resolveu |
+| `DecisaoAdmin` | `string?` | `decisao_admin` | Justificativa da decisão do admin |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
+| `ResolvidoEm` | `DateTime?` | `resolvido_em` | UTC |
 
 **Enum `StatusDisputa`**: `Aberta`, `EmAnalise`, `ResolvidaCliente`, `ResolvidaPrestador`
 
@@ -482,13 +482,13 @@ Prontto é um marketplace brasileiro de serviços domésticos que conecta Client
 | Propriedade | Tipo C# | Coluna DB | Observações |
 |------------|---------|-----------|------------|
 | `Id` | `Guid` | `id` | PK |
-| `UsuarioId` | `Guid` | `user_id` | FK → `users.id` |
-| `Titulo` | `string` | `title` | Ex: "Nova proposta recebida" |
-| `Mensagem` | `string` | `message` | Texto completo da notificação |
-| `Lida` | `bool` | `read` | Default `false` |
-| `Tipo` | `string` | `type` | Ex: `proposta`, `pagamento`, `disputa`, `avaliacao` |
-| `ReferenciaId` | `string?` | `reference_id` | ID da entidade relacionada (ServicoId, DisputaId, etc.) |
-| `CriadoEm` | `DateTime` | `created_at` | UTC |
+| `UsuarioId` | `Guid` | `usuario_id` | FK → `users.id` |
+| `Titulo` | `string` | `titulo` | Ex: "Nova proposta recebida" |
+| `Mensagem` | `string` | `mensagem` | Texto completo da notificação |
+| `Lida` | `bool` | `lido` | Default `false` |
+| `Tipo` | `string` | `tipo` | Ex: `proposta`, `pagamento`, `disputa`, `avaliacao` |
+| `ReferenciaId` | `string?` | `referencia_id` | ID da entidade relacionada (ServicoId, DisputaId, etc.) |
+| `CriadoEm` | `DateTime` | `criado_em` | UTC |
 
 **Eventos que geram notificação**: nova proposta recebida, contraproposta, pagamento confirmado, serviço concluído (por prestador), conclusão automática, disputa aberta, disputa resolvida, avaliação recebida.
 
@@ -960,7 +960,7 @@ Implementar com `IHostedService` + timer periódico (Quartz.NET é alternativa m
 **Access Token (JWT HS256)**
 - Expiração: **15 minutos**
 - Segredo via variável de ambiente `SESSION_SECRET` (nunca hardcoded em produção)
-- Claims: `userId`, `email`, `accountType`, `role`
+- Claims: `userId`, `email`, `accountType`, `papel`
 - Transmitido via header `Authorization: Bearer <token>`
 - Stateless — não armazenado no banco
 
@@ -1061,29 +1061,29 @@ A arquitetura deve suportar crescimento orgânico sem reescritas. As escolhas fo
 |--------|---------|------|--------|
 | `usuarios` | `email` | UNIQUE | Login |
 | `usuarios` | `slug` | UNIQUE | URL pública |
-| `usuarios` | `account_type`, `city_slug`, `category_slug` | Composto | Busca de prestadores |
-| `servicos` | `client_id` | B-tree | Serviços do cliente |
-| `servicos` | `provider_id` | B-tree | Serviços do prestador |
+| `usuarios` | `tipo_conta`, `city_slug`, `category_slug` | Composto | Busca de prestadores |
+| `servicos` | `cliente_id` | B-tree | Serviços do cliente |
+| `servicos` | `prestador_id` | B-tree | Serviços do prestador |
 | `servicos` | `status` | B-tree | Filtros por status |
-| `servicos` | `awaiting_confirmation_since` | B-tree | Job de auto-conclusão |
-| `cobrancas` | `service_id` | UNIQUE | 1:1 com serviço |
-| `cobrancas` | `status`, `pix_expires_at` | Composto | Job de expiração PIX |
+| `servicos` | `aguardando_confirmacao_desde` | B-tree | Job de auto-conclusão |
+| `cobrancas` | `servico_id` | UNIQUE | 1:1 com serviço |
+| `cobrancas` | `status`, `pix_expira_em` | Composto | Job de expiração PIX |
 | `cobrancas` | `pagarme_order_id` | UNIQUE | Idempotência webhook |
-| `mensagens_servico` | `service_id`, `created_at` | Composto | Paginação do chat |
-| `avaliacoes` | `reviewed_id` | B-tree | Avaliações recebidas |
-| `avaliacoes` | `service_id`, `reviewer_id` | UNIQUE | Constraint de duplicidade |
-| `usuarios_categorias` | `category_id` | B-tree | Busca por categoria (FK) |
-| `usuarios_cidades` | `city_id` | B-tree | Busca por cidade (FK) |
+| `mensagens_servico` | `servico_id`, `criado_em` | Composto | Paginação do chat |
+| `avaliacoes` | `avaliado_id` | B-tree | Avaliações recebidas |
+| `avaliacoes` | `servico_id`, `avaliador_id` | UNIQUE | Constraint de duplicidade |
+| `usuarios_categorias` | `categoria_id` | B-tree | Busca por categoria (FK) |
+| `usuarios_cidades` | `cidade_id` | B-tree | Busca por cidade (FK) |
 | `categorias` | `slug` | UNIQUE | URL pública e busca |
 | `cidades` | `slug` | UNIQUE | URL pública e busca |
 | `tokens_renovacao` | `token` | UNIQUE | Lookup de renovação |
-| `tokens_renovacao` | `user_id`, `revoked_at` | Composto | Sessões ativas por usuário |
-| `logs_auditoria` | `user_id`, `created_at` | Composto | Auditoria por usuário |
-| `logs_auditoria` | `entity`, `entity_id` | Composto | Auditoria por entidade |
-| `logs_auditoria` | `created_at` | B-tree | Purge e listagem cronológica |
-| `disputas` | `service_id` | UNIQUE | 1:1 com serviço |
+| `tokens_renovacao` | `usuario_id`, `revogado_em` | Composto | Sessões ativas por usuário |
+| `logs_auditoria` | `usuario_id`, `criado_em` | Composto | Auditoria por usuário |
+| `logs_auditoria` | `entidade`, `entidade_id` | Composto | Auditoria por entidade |
+| `logs_auditoria` | `criado_em` | B-tree | Purge e listagem cronológica |
+| `disputas` | `servico_id` | UNIQUE | 1:1 com serviço |
 | `disputas` | `status` | B-tree | Filtro de disputas abertas |
-| `notificacoes` | `user_id`, `read`, `created_at` | Composto | Notificações não lidas por usuário |
+| `notificacoes` | `usuario_id`, `lido`, `criado_em` | Composto | Notificações não lidas por usuário |
 
 **Paginação**: todos os endpoints de listagem aceitam `page` e `pageSize` (máximo 50). Usar cursor-based pagination para o chat (`afterId`).
 
