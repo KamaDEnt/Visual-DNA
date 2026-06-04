@@ -10,6 +10,7 @@ using Prontto.Infrastructure.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AdicionarInfraestrutura(builder.Configuration);
 
 // ── Swagger ────────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -8,6 +8,8 @@ import {
   Cidade,
   ImagemPortfolio,
   ComandoAtualizarPerfil,
+  PrestadorBusca,
+  ResultadoPaginado,
 } from '../models/usuario.model';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +35,32 @@ export class PerfilPrestadorService {
 
   listarCidades(): Observable<Cidade[]> {
     return this.http.get<Cidade[]>(`${this.baseApi}/api/cidades`);
+  }
+
+  /**
+   * Busca paginada de prestadores por categoria (obrigatório) e cidade (opcional).
+   * Rota: GET /api/prestadores?categoriaSlug=&cidadeSlug=&page=&pageSize=
+   * Pública — não requer autenticação (RN-01).
+   */
+  buscarPrestadores(
+    categoriaSlug: string,
+    cidadeSlug?: string,
+    page = 1,
+    pageSize = 20,
+  ): Observable<ResultadoPaginado<PrestadorBusca>> {
+    let params = new HttpParams()
+      .set('categoriaSlug', categoriaSlug)
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (cidadeSlug) {
+      params = params.set('cidadeSlug', cidadeSlug);
+    }
+
+    return this.http.get<ResultadoPaginado<PrestadorBusca>>(
+      `${this.baseApi}/api/prestadores`,
+      { params },
+    );
   }
 
   /**

@@ -19,4 +19,15 @@ public interface IRepositorioPerfilPrestador
     Task<ImagemPortfolio?> ObterImagemPorIdAsync(Guid id);
     Task AdicionarImagemAsync(ImagemPortfolio imagem);
     Task RemoverImagemAsync(ImagemPortfolio imagem);
+
+    /// <summary>
+    /// Busca prestadores pela categoria (obrigatório) e cidade (opcional).
+    /// Aplica filtros: TipoConta = Prestador, Slug IS NOT NULL, DeletadoEm IS NULL.
+    /// Ordena por MediaAvaliacoes DESC. Suporta paginação via skip/take.
+    /// </summary>
+    Task<(List<Usuario> Items, int Total)> BuscarAsync(
+        Guid categoriaId,
+        Guid? cidadeId,
+        int skip,
+        int take);
 }

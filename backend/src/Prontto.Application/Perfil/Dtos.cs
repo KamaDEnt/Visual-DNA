@@ -1,6 +1,29 @@
 namespace Prontto.Application.Perfil;
 
 /// <summary>
+/// Resultado de um prestador na busca paginada (RF-03).
+/// LGPD: nunca incluir email, CPF, hashSenha ou dados bancários.
+/// </summary>
+public record DtoPrestadorBusca(
+    Guid Id,
+    string Nome,
+    string? FotoPerfilUrl,
+    string Slug,
+    decimal MediaAvaliacoes,
+    int TotalAvaliacoes,
+    List<DtoCategoriaPublica> Categorias,
+    List<DtoCidadePublica> Cidades
+);
+
+/// <summary>Resposta paginada genérica (RF-03).</summary>
+public record ResultadoPaginado<T>(
+    List<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize
+);
+
+/// <summary>
 /// Perfil público do prestador.
 /// LGPD: nunca incluir email, CPF, hashSenha ou dados bancários.
 /// </summary>

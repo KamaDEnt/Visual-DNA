@@ -42,4 +42,25 @@ public class ControladorPrestadores(IServicoPerfilPrestador servicoPerfil) : Con
         var cidades = await servicoPerfil.ListarCidadesAsync();
         return Ok(cidades);
     }
+
+    /// <summary>
+    /// Busca paginada de prestadores por categoria (obrigatório) e cidade (opcional).
+    /// Pública — sem autenticação. RN-01, RN-03, RN-04, RN-05.
+    /// GET /api/prestadores?categoriaSlug=encanador&amp;cidadeSlug=sao-paulo&amp;page=1&amp;pageSize=20
+    /// </summary>
+    [HttpGet("api/prestadores")]
+    public async Task<IActionResult> BuscarPrestadores(
+        [FromQuery] string categoriaSlug,
+        [FromQuery] string? cidadeSlug = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (string.IsNullOrWhiteSpace(categoriaSlug))
+            return BadRequest(new { mensagem = "O parâmetro 'categoriaSlug' é obrigatório." });
+
+        if (page < 1) page = 1;
+
+        var resultado = await servicoPerfil.BuscarPrestadoresAsync(categoriaSlug, cidadeSlug, page, pageSize);
+        return Ok(resultado);
+    }
 }

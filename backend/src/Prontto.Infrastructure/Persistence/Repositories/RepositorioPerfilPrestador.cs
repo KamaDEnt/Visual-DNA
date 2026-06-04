@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Prontto.Domain.Entities;
+using Prontto.Domain.Enums;
 using Prontto.Domain.Interfaces;
 using Prontto.Infrastructure.Persistence.Context;
 
@@ -62,5 +63,39 @@ public class RepositorioPerfilPrestador(ContextoBancoDados db) : IRepositorioPer
         imagem.DeletadoEm = DateTime.UtcNow;
         db.ImagensPortfolio.Update(imagem);
         await db.SaveChangesAsync();
+    }
+
+    public async Task<(List<Usuario> Items, int Total)> BuscarAsync(
+        Guid categoriaId,
+        Guid? cidadeId,
+        int skip,
+        int take)
+    {
+        // Base query: prestadores com perfil completo e não deletados
+        // O filtro global de soft delete (DeletadoEm IS NULL) já é aplicado pelo EF Core.
+        var query = db.Usuarios
+            .Where(u =>
+                u.TipoConta == TipoConta.Prestador &&
+                u.Slug != null &&
+                u.Categorias.Any(cu => cu.CategoriaId == categoriaId));
+
+        // Filtro de cidade (opcional)
+        if (cidadeId.HasValue)
+            query = query.Where(u => u.Cidades.Any(cu => cu.CidadeId == cidadeId.Value));
+
+        // Contagem total para paginação
+        var total = await query.CountAsync();
+
+        // Busca com navegação para montar o DTO
+        var items = await query
+            .OrderByDescending(u => u.MediaAvaliacoes)
+            .ThenBy(u => u.Nome)
+            .Skip(skip)
+            .Take(take)
+            .Include(u => u.Categorias).ThenInclude(cu => cu.Categoria)
+            .Include(u => u.Cidades).ThenInclude(cu => cu.Cidade)
+            .ToListAsync();
+
+        return (items, total);
     }
 }

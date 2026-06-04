@@ -57,10 +57,10 @@ describe('AdminService', () => {
 
   it('atualizarStatusServico deve fazer PATCH com status correto', () => {
     const id = 'uuid-123';
-    servico.atualizarStatusServico(id, 'completed').subscribe();
+    servico.atualizarStatusServico(id, 'concluido').subscribe();
     const req = httpMock.expectOne(`${base}/services/${id}`);
     expect(req.request.method).toBe('PATCH');
-    expect(req.request.body).toEqual({ status: 'completed' });
+    expect(req.request.body).toEqual({ status: 'concluido' });
     req.flush({ service: {} });
   });
 

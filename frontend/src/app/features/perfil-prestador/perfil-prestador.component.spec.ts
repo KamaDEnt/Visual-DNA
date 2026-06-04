@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 import { PerfilPrestadorComponent } from './perfil-prestador.component';
 import { PerfilPrestadorService } from '../../core/api/perfil-prestador.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -23,14 +24,21 @@ const perfilMock: PerfilPublico = {
 describe('PerfilPrestadorComponent', () => {
   let component: PerfilPrestadorComponent;
   let fixture: ComponentFixture<PerfilPrestadorComponent>;
-  let serviceSpy: jasmine.SpyObj<PerfilPrestadorService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let obterPerfilPublicoSpy: ReturnType<typeof vi.fn>;
+  let navigateSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    serviceSpy = jasmine.createSpyObj('PerfilPrestadorService', ['obterPerfilPublico']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate'], { url: '/prestador/joao-silva-a1b2' });
+    obterPerfilPublicoSpy = vi.fn().mockReturnValue(of(perfilMock));
+    navigateSpy = vi.fn();
 
-    serviceSpy.obterPerfilPublico.and.returnValue(of(perfilMock));
+    const serviceMock = {
+      obterPerfilPublico: obterPerfilPublicoSpy,
+    } as unknown as PerfilPrestadorService;
+
+    const routerMock = {
+      navigate: navigateSpy,
+      url: '/prestador/joao-silva-a1b2',
+    } as unknown as Router;
 
     await TestBed.configureTestingModule({
       imports: [PerfilPrestadorComponent],
@@ -39,8 +47,8 @@ describe('PerfilPrestadorComponent', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: { get: () => 'joao-silva-a1b2' } } },
         },
-        { provide: Router, useValue: routerSpy },
-        { provide: PerfilPrestadorService, useValue: serviceSpy },
+        { provide: Router, useValue: routerMock },
+        { provide: PerfilPrestadorService, useValue: serviceMock },
         {
           provide: AuthService,
           useValue: { usuario: () => null },
@@ -59,12 +67,12 @@ describe('PerfilPrestadorComponent', () => {
 
   it('deve exibir o perfil após carregar', () => {
     expect(component.perfil()).toEqual(perfilMock);
-    expect(component.carregando()).toBeFalse();
+    expect(component.carregando()).toBe(false);
     expect(component.erro()).toBeNull();
   });
 
   it('deve exibir erro 404 quando prestador não for encontrado', () => {
-    serviceSpy.obterPerfilPublico.and.returnValue(throwError(() => ({ status: 404 })));
+    obterPerfilPublicoSpy.mockReturnValue(throwError(() => ({ status: 404 })));
     component.ngOnInit();
     expect(component.erro()).toBe('Prestador não encontrado.');
     expect(component.perfil()).toBeNull();
@@ -72,16 +80,16 @@ describe('PerfilPrestadorComponent', () => {
 
   it('deve redirecionar para /entrar ao contratar sem autenticação', () => {
     component.contratar();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(
+    expect(navigateSpy).toHaveBeenCalledWith(
       ['/entrar'],
-      jasmine.objectContaining({ queryParams: { returnUrl: jasmine.any(String) } }),
+      expect.objectContaining({ queryParams: expect.objectContaining({ returnUrl: expect.any(String) }) }),
     );
   });
 
   it('deve calcular estrelas corretamente', () => {
     expect(component.estrelas.length).toBe(5);
     // Média 4.5 → arredonda para 5 estrelas ativas
-    expect(component.estralaAtiva(5)).toBeTrue();
-    expect(component.estralaAtiva(1)).toBeTrue();
+    expect(component.estralaAtiva(5)).toBe(true);
+    expect(component.estralaAtiva(1)).toBe(true);
   });
 });

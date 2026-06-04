@@ -23,12 +23,12 @@ describe('CadastrarComponent', () => {
   });
 
   it('formulário deve ser inválido quando vazio', () => {
-    expect(componente.formulario.invalid).toBeTrue();
+    expect(componente.formulario.invalid).toBe(true);
   });
 
   it('formulário deve ser válido com dados mínimos', () => {
     componente.formulario.patchValue({ nome: 'João Silva', email: 'joao@test.com', senha: 'senha123', tipoConta: 'cliente' });
-    expect(componente.formulario.valid).toBeTrue();
+    expect(componente.formulario.valid).toBe(true);
   });
 
   it('prestador deve exibir campo de especialidade', () => {

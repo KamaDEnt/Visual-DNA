@@ -16,4 +16,14 @@ public interface IServicoPerfilPrestador
 
     /// <summary>Lista todas as cidades ativas, ordenadas por Nome.</summary>
     Task<List<DtoCidadePublica>> ListarCidadesAsync();
+
+    /// <summary>
+    /// Busca paginada de prestadores por categoria e cidade (RF-03).
+    /// Lança ExcecaoNaoEncontrado se categoriaSlug ou cidadeSlug não forem encontrados ou estiverem inativos.
+    /// </summary>
+    Task<ResultadoPaginado<DtoPrestadorBusca>> BuscarPrestadoresAsync(
+        string categoriaSlug,
+        string? cidadeSlug,
+        int page,
+        int pageSize);
 }

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { PerfilPrestadorService } from './perfil-prestador.service';
 import { environment } from '../../../environments/environment';
-import { PerfilPublico, Categoria, Cidade } from '../models/usuario.model';
+import { PerfilPublico, Categoria, Cidade, PrestadorBusca, ResultadoPaginado } from '../models/usuario.model';
 
 const perfilMock: PerfilPublico = {
   id: 'uuid-1',
@@ -80,5 +80,49 @@ describe('PerfilPrestadorService', () => {
     const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/perfil`);
     expect(req.request.method).toBe('PUT');
     req.flush({ perfil: { ...perfilMock, nome: 'Novo Nome' } });
+  });
+
+  it('deve buscar prestadores por categoria sem cidade', () => {
+    const resultado: ResultadoPaginado<PrestadorBusca> = {
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 20,
+    };
+
+    service.buscarPrestadores('encanador').subscribe((res) => {
+      expect(res).toEqual(resultado);
+    });
+
+    const req = httpMock.expectOne(
+      (r) => r.url === `${environment.apiUrl}/api/prestadores` &&
+        r.params.get('categoriaSlug') === 'encanador' &&
+        !r.params.has('cidadeSlug'),
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(resultado);
+  });
+
+  it('deve buscar prestadores por categoria e cidade', () => {
+    const resultado: ResultadoPaginado<PrestadorBusca> = {
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 20,
+    };
+
+    service.buscarPrestadores('eletricista', 'itapevi', 2, 20).subscribe((res) => {
+      expect(res).toEqual(resultado);
+    });
+
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiUrl}/api/prestadores` &&
+        r.params.get('categoriaSlug') === 'eletricista' &&
+        r.params.get('cidadeSlug') === 'itapevi' &&
+        r.params.get('page') === '2',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(resultado);
   });
 });

@@ -25,10 +25,10 @@ describe('AdminComponent', () => {
   });
 
   it('rotularStatus deve retornar rótulo correto', () => {
-    expect(componente.rotularStatus('pending_approval')).toBe('Aguardando aprovação');
-    expect(componente.rotularStatus('in_progress')).toBe('Em andamento');
-    expect(componente.rotularStatus('completed')).toBe('Concluído');
-    expect(componente.rotularStatus('cancelled')).toBe('Cancelado');
+    expect(componente.rotularStatus('aguardando_pagamento')).toBe('Aguardando pagamento');
+    expect(componente.rotularStatus('em_andamento')).toBe('Em andamento');
+    expect(componente.rotularStatus('concluido')).toBe('Concluído');
+    expect(componente.rotularStatus('cancelado')).toBe('Cancelado');
   });
 
   it('deve trocar de aba ao clicar', () => {

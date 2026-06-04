@@ -27,17 +27,17 @@ describe('AuthService', () => {
   });
 
   it('deve iniciar sem usuário autenticado', () => {
-    expect(servico.estaAutenticado()).toBeFalse();
+    expect(servico.estaAutenticado()).toBe(false);
     expect(servico.usuario()).toBeNull();
   });
 
   it('deve identificar admin corretamente', () => {
-    expect(servico.ehAdmin()).toBeFalse();
+    expect(servico.ehAdmin()).toBe(false);
   });
 
   it('deve limpar sessão ao sair', () => {
     servico.sair();
-    expect(servico.estaAutenticado()).toBeFalse();
+    expect(servico.estaAutenticado()).toBe(false);
     expect(servico.usuario()).toBeNull();
     expect(localStorage.getItem('prontto_token')).toBeNull();
     expect(localStorage.getItem('prontto_usuario')).toBeNull();

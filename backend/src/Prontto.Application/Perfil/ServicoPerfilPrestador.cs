@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 using Prontto.Application.Common;
 using Prontto.Domain.Entities;
 using Prontto.Domain.Enums;
@@ -11,9 +12,13 @@ public class ServicoPerfilPrestador(
     IRepositorioUsuario repositorioUsuarios,
     IRepositorioPerfilPrestador repositorioPerfil,
     IRepositorioCategoria repositorioCategorias,
-    IRepositorioCidade repositorioCidades) : IServicoPerfilPrestador
+    IRepositorioCidade repositorioCidades,
+    IMemoryCache cache) : IServicoPerfilPrestador
 {
     private const int MaxTentativasSlug = 5;
+    private const string ChaveCacheCategorias = "categorias";
+    private static readonly TimeSpan TtlCategorias = TimeSpan.FromHours(1);
+    private static readonly TimeSpan TtlPerfilPrestador = TimeSpan.FromMinutes(5);
 
     public async Task<DtoPerfilPublico> AtualizarPerfilAsync(Guid usuarioId, ComandoAtualizarPerfil comando)
     {
@@ -58,22 +63,84 @@ public class ServicoPerfilPrestador(
 
     public async Task<DtoPerfilPublico> ObterPerfilPublicoAsync(string slug)
     {
-        var usuario = await repositorioPerfil.ObterPorSlugAsync(slug)
-            ?? throw new ExcecaoNaoEncontrado("Prestador não encontrado");
+        // Cache por slug — TTL 5 minutos (RN-07)
+        var chaveCache = $"perfil:{slug}";
 
-        return MapearParaDto(usuario);
+        if (!cache.TryGetValue(chaveCache, out DtoPerfilPublico? dto) || dto is null)
+        {
+            var usuario = await repositorioPerfil.ObterPorSlugAsync(slug)
+                ?? throw new ExcecaoNaoEncontrado("Prestador não encontrado");
+
+            dto = MapearParaDto(usuario);
+            cache.Set(chaveCache, dto, TtlPerfilPrestador);
+        }
+
+        return dto;
     }
 
     public async Task<List<DtoCategoriaPublica>> ListarCategoriasAsync()
     {
-        var categorias = await repositorioCategorias.ListarAtivasAsync();
-        return categorias.Select(c => new DtoCategoriaPublica(c.Id, c.Nome, c.Slug)).ToList();
+        // Cache de categorias — TTL 1 hora (RN-06)
+        if (!cache.TryGetValue(ChaveCacheCategorias, out List<DtoCategoriaPublica>? categorias) || categorias is null)
+        {
+            var entidades = await repositorioCategorias.ListarAtivasAsync();
+            categorias = entidades.Select(c => new DtoCategoriaPublica(c.Id, c.Nome, c.Slug)).ToList();
+            cache.Set(ChaveCacheCategorias, categorias, TtlCategorias);
+        }
+
+        return categorias;
     }
 
     public async Task<List<DtoCidadePublica>> ListarCidadesAsync()
     {
         var cidades = await repositorioCidades.ListarAtivasAsync();
         return cidades.Select(c => new DtoCidadePublica(c.Id, c.Nome, c.Estado, c.Slug)).ToList();
+    }
+
+    public async Task<ResultadoPaginado<DtoPrestadorBusca>> BuscarPrestadoresAsync(
+        string categoriaSlug,
+        string? cidadeSlug,
+        int page,
+        int pageSize)
+    {
+        // RN-08: pageSize máximo 50
+        pageSize = Math.Min(pageSize, 50);
+
+        // Resolve categoriaId pelo slug — valida que existe e está ativa
+        var categoria = await repositorioCategorias.ObterPorSlugAsync(categoriaSlug);
+        if (categoria is null || !categoria.Ativa)
+            throw new ExcecaoNaoEncontrado($"Categoria '{categoriaSlug}' não encontrada");
+
+        // Resolve cidadeId pelo slug (opcional)
+        Guid? cidadeId = null;
+        if (!string.IsNullOrWhiteSpace(cidadeSlug))
+        {
+            var cidade = await repositorioCidades.ObterPorSlugAsync(cidadeSlug);
+            if (cidade is null || !cidade.Ativa)
+                throw new ExcecaoNaoEncontrado($"Cidade '{cidadeSlug}' não encontrada");
+
+            cidadeId = cidade.Id;
+        }
+
+        var skip = (page - 1) * pageSize;
+        var (items, total) = await repositorioPerfil.BuscarAsync(categoria.Id, cidadeId, skip, pageSize);
+
+        var dtos = items.Select(u => new DtoPrestadorBusca(
+            Id: u.Id,
+            Nome: u.Nome,
+            FotoPerfilUrl: u.FotoPerfilUrl,
+            Slug: u.Slug!,
+            MediaAvaliacoes: u.MediaAvaliacoes,
+            TotalAvaliacoes: u.TotalAvaliacoes,
+            Categorias: u.Categorias
+                .Select(cu => new DtoCategoriaPublica(cu.Categoria.Id, cu.Categoria.Nome, cu.Categoria.Slug))
+                .ToList(),
+            Cidades: u.Cidades
+                .Select(cu => new DtoCidadePublica(cu.Cidade.Id, cu.Cidade.Nome, cu.Cidade.Estado, cu.Cidade.Slug))
+                .ToList()
+        )).ToList();
+
+        return new ResultadoPaginado<DtoPrestadorBusca>(dtos, total, page, pageSize);
     }
 
     // ── Slug generation (ADR-08) ───────────────────────────────────────────────

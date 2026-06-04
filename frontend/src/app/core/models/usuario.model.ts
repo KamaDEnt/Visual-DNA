@@ -159,3 +159,23 @@ export interface ComandoAtualizarPerfil {
   categoriaIds?: string[] | null;
   cidadeIds?: string[] | null;
 }
+
+// ── Busca de Prestadores (RF-03) ─────────────────────────────────────────────
+
+export interface PrestadorBusca {
+  id: string;
+  nome: string;
+  fotoPerfilUrl?: string | null;
+  slug: string;
+  mediaAvaliacoes: number;
+  totalAvaliacoes: number;
+  categorias: Categoria[];
+  cidades: Cidade[];
+}
+
+export interface ResultadoPaginado<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}

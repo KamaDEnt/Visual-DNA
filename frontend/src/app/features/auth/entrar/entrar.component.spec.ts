@@ -23,21 +23,21 @@ describe('EntrarComponent', () => {
   });
 
   it('formulário deve ser inválido quando vazio', () => {
-    expect(componente.formulario.invalid).toBeTrue();
+    expect(componente.formulario.invalid).toBe(true);
   });
 
   it('formulário deve ser inválido com e-mail incorreto', () => {
     componente.formulario.patchValue({ email: 'nao-e-email', senha: 'senha123' });
-    expect(componente.formulario.invalid).toBeTrue();
+    expect(componente.formulario.invalid).toBe(true);
   });
 
   it('formulário deve ser válido com dados corretos', () => {
     componente.formulario.patchValue({ email: 'test@test.com', senha: 'senha123' });
-    expect(componente.formulario.valid).toBeTrue();
+    expect(componente.formulario.valid).toBe(true);
   });
 
   it('senha menor que 8 caracteres deve ser inválida', () => {
     componente.formulario.patchValue({ email: 'test@test.com', senha: '1234' });
-    expect(componente.formulario.get('senha')?.invalid).toBeTrue();
+    expect(componente.formulario.get('senha')?.invalid).toBe(true);
   });
 });
