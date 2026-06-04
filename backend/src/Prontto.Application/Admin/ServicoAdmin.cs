@@ -24,7 +24,7 @@ public class ServicoAdmin(
             ),
             Servicos: new EstatisticasServicos(
                 Total: totalServicos,
-                Pendentes: await repositorioServicos.ContarPorStatusAsync(StatusServico.AguardandoAprovacao),
+                Pendentes: await repositorioServicos.ContarPorStatusAsync(StatusServico.EmNegociacao),
                 EmAndamento: await repositorioServicos.ContarPorStatusAsync(StatusServico.EmAndamento),
                 Concluidos: await repositorioServicos.ContarPorStatusAsync(StatusServico.Concluido)
             ),

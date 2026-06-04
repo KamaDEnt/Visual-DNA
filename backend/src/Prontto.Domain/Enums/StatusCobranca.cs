@@ -1,8 +1,11 @@
-﻿namespace Prontto.Domain.Enums;
+namespace Prontto.Domain.Enums;
 
 public enum StatusCobranca
 {
     Pendente,
     Pago,
-    Estornado
+    Retido,
+    Liberado,
+    Reembolsado,
+    Cancelado
 }

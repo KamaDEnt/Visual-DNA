@@ -14,14 +14,14 @@ export class BankingService {
 
   salvarDadosBancarios(dados: Partial<DadosBancarios>) {
     return this.http.post<{ banking: DadosBancarios }>(`${this.base}/banking`, {
-      pixKeyType: dados.tipoChavePix,
-      pixKey: dados.chavePix,
-      fullName: dados.nomeCompleto,
+      tipoChavePix: dados.tipoChavePix,
+      chavePix: dados.chavePix,
+      nomeCompleto: dados.nomeCompleto,
       cpfCnpj: dados.cpfCnpj,
-      bankName: dados.nomeBanco,
-      agency: dados.agencia,
-      accountNumber: dados.numeroConta,
-      bankAccountType: dados.tipoConta,
+      nomeBanco: dados.nomeBanco,
+      agencia: dados.agencia,
+      numeroConta: dados.numeroConta,
+      tipoConta: dados.tipoConta,
     });
   }
 }

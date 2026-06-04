@@ -1,3 +1,8 @@
-﻿namespace Prontto.Application.Auth;
+namespace Prontto.Application.Auth;
 
-public record ComandoLogin(string Email, string Senha);
+public record ComandoLogin(
+    string Email,
+    string Senha,
+    string? Ip = null,
+    string? UserAgent = null
+);

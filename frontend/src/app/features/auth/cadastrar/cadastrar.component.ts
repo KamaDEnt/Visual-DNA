@@ -22,12 +22,12 @@ export class CadastrarComponent {
     tipoConta: ['cliente', Validators.required],
     telefone: [''],
     especialidade: [''],
-    cidade: [''],
   });
 
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly ehPrestador = signal(false);
+  readonly senhaVisivel = signal(false);
 
   onTipoContaMudou(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
@@ -37,13 +37,13 @@ export class CadastrarComponent {
   cadastrar(): void {
     if (this.formulario.invalid) return;
 
-    const { nome, email, senha, tipoConta, telefone, especialidade, cidade } = this.formulario.value;
+    const { nome, email, senha, tipoConta, telefone, especialidade } = this.formulario.value;
     this.carregando.set(true);
     this.erro.set(null);
 
     this.auth.cadastrar({
       nome: nome!, email: email!, senha: senha!, tipoConta: tipoConta!,
-      telefone: telefone ?? undefined, especialidade: especialidade ?? undefined, cidade: cidade ?? undefined,
+      telefone: telefone ?? undefined, especialidade: especialidade ?? undefined,
     }).subscribe({
       next: () => this.roteador.navigate(['/minha-area']),
       error: (resposta) => {

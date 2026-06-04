@@ -1,5 +1,5 @@
 export type TipoContaUsuario = 'cliente' | 'prestador';
-export type PapelUsuario = 'user' | 'admin';
+export type PapelUsuario = 'usuario' | 'admin';
 
 export interface Usuario {
   id: string;
@@ -9,7 +9,11 @@ export interface Usuario {
   tipoConta: TipoContaUsuario;
   papel: PapelUsuario;
   especialidade?: string | null;
-  cidade?: string | null;
+  cidadeId?: string | null;
+  fotoPerfilUrl?: string | null;
+  slug?: string | null;
+  mediaAvaliacoes: number;
+  totalAvaliacoes: number;
   criadoEm: string;
 }
 
@@ -32,43 +36,76 @@ export interface Servico {
   id: string;
   titulo: string;
   descricao?: string | null;
-  categoria: string;
+  categoriaId: string;
+  cidadeId?: string | null;
   clienteId?: string | null;
   prestadorId?: string | null;
-  preco: string;
-  taxaAdminRate: string;
+  preco: number;
+  taxaAdminPercentual: number;
   status: StatusServico;
   endereco?: string | null;
   agendadoEm?: string | null;
-  concluidoEm?: string | null;
+  concluido?: string | null;
+  aguardandoConfirmacaoDesde?: string | null;
   criadoEm: string;
   atualizadoEm: string;
   cliente?: { nome: string; email: string } | null;
   prestador?: { nome: string; email: string } | null;
 }
 
-export type StatusServico = 'pending_approval' | 'in_progress' | 'completed' | 'cancelled';
+export type StatusServico =
+  | 'em_negociacao'
+  | 'aguardando_pagamento'
+  | 'pago'
+  | 'em_andamento'
+  | 'aguardando_confirmacao_cliente'
+  | 'em_disputa'
+  | 'concluido'
+  | 'cancelado';
+
+export type StatusCobranca =
+  | 'pendente'
+  | 'pago'
+  | 'retido'
+  | 'liberado'
+  | 'reembolsado'
+  | 'cancelado';
 
 export interface Cobranca {
   id: string;
   servicoId: string;
-  valorTotal: string;
-  taxaAdmin: string;
-  valorPrestador: string;
-  status: 'pending' | 'paid' | 'refunded';
-  pagadoEm?: string | null;
+  valorTotal: number;
+  taxaAdmin: number;
+  valorPrestador: number;
+  status: StatusCobranca;
+  pagarmeOrderId?: string | null;
+  pagarmePagamentoId?: string | null;
+  pixQrCode?: string | null;
+  pixCopiaCola?: string | null;
+  pixExpiraEm?: string | null;
+  pagoEm?: string | null;
+  retidoEm?: string | null;
+  liberadoEm?: string | null;
   criadoEm: string;
   atualizadoEm: string;
-  servico?: { titulo: string; categoria: string; clienteId?: string | null; prestadorId?: string | null } | null;
+  servico?: { titulo: string; categoriaId: string; clienteId?: string | null; prestadorId?: string | null } | null;
 }
+
+export type PapelRemetente = 'cliente' | 'prestador' | 'admin' | 'sistema';
+export type TipoMensagem = 'texto' | 'imagem' | 'proposta' | 'sistema';
+export type StatusProposta = 'pendente' | 'aceita' | 'recusada' | 'expirada';
 
 export interface MensagemServico {
   id: string;
   servicoId: string;
   remetenteId?: string | null;
-  papelRemetente: 'client' | 'provider' | 'admin';
-  nomeRemetente: string;
+  papelRemetente: PapelRemetente;
+  tipoMensagem: TipoMensagem;
   conteudo: string;
+  valorProposta?: number | null;
+  statusProposta?: StatusProposta | null;
+  imagemModerada: boolean;
+  imagemAprovada?: boolean | null;
   criadoEm: string;
 }
 

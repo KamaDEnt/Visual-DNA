@@ -22,6 +22,7 @@ export class EntrarComponent {
 
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+  readonly senhaVisivel = signal(false);
 
   entrar(): void {
     if (this.formulario.invalid) return;

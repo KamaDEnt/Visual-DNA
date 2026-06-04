@@ -1,4 +1,4 @@
-﻿using Prontto.Domain.Enums;
+using Prontto.Domain.Enums;
 
 namespace Prontto.Application.Auth;
 
@@ -9,5 +9,7 @@ public record ComandoCadastro(
     TipoConta TipoConta,
     string? Telefone = null,
     string? Especialidade = null,
-    string? Cidade = null
+    Guid? CidadeId = null,
+    string? Ip = null,
+    string? UserAgent = null
 );

@@ -1,9 +1,13 @@
-﻿namespace Prontto.Domain.Enums;
+namespace Prontto.Domain.Enums;
 
 public enum StatusServico
 {
-    AguardandoAprovacao,
+    EmNegociacao,
+    AguardandoPagamento,
+    Pago,
     EmAndamento,
+    AguardandoConfirmacaoCliente,
+    EmDisputa,
     Concluido,
     Cancelado
 }

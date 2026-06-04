@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Prontto.Domain.Entities;
 using Prontto.Domain.Interfaces;
-using Prontto.Infrastructure.Data;
+using Prontto.Infrastructure.Persistence.Context;
 
-namespace Prontto.Infrastructure.Repositories;
+namespace Prontto.Infrastructure.Persistence.Repositories;
 
 public class RepositorioBanking(ContextoBancoDados db) : IRepositorioBanking
 {

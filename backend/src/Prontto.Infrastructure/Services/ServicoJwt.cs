@@ -1,5 +1,6 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -26,10 +27,22 @@ public class ServicoJwt(IConfiguration configuracao) : IServicoJwt
 
         var token = new JwtSecurityToken(
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(30),
+            expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: credenciais
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GerarRefreshToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    public string ComputarHashRefreshToken(string tokenBruto)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(tokenBruto));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

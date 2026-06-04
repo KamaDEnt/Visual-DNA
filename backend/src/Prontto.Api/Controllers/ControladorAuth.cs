@@ -1,6 +1,7 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Prontto.Application.Auth;
 using Prontto.Application.Common;
 using Prontto.Domain.Enums;
@@ -12,7 +13,10 @@ namespace Prontto.Api.Controllers;
 [Route("api/auth")]
 public class ControladorAuth(IServicoAutenticacao servicoAuth, IRepositorioBanking banking) : ControllerBase
 {
+    private const string NomeCookieRefreshToken = "prontto_refresh_token";
+
     [HttpPost("register")]
+    [EnableRateLimiting("cadastro")]
     public async Task<IActionResult> Cadastrar([FromBody] RequisicaoCadastro req)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -20,20 +24,63 @@ public class ControladorAuth(IServicoAutenticacao servicoAuth, IRepositorioBanki
         if (!Enum.TryParse<TipoConta>(req.TipoConta, ignoreCase: true, out var tipoConta))
             return BadRequest(new { error = "Tipo de conta inválido" });
 
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
         var resultado = await servicoAuth.CadastrarAsync(new ComandoCadastro(
             req.Nome, req.Email, req.Senha, tipoConta,
-            req.Telefone, req.Especialidade, req.Cidade));
+            req.Telefone, req.Especialidade, req.CidadeId,
+            ip, userAgent));
+
+        DefinirCookieRefreshToken(resultado.RefreshToken);
 
         return StatusCode(201, new { token = resultado.Token, user = DtoUsuario.De(resultado.Usuario) });
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Entrar([FromBody] RequisicaoLogin req)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var resultado = await servicoAuth.EntrarAsync(new ComandoLogin(req.Email, req.Senha));
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        var resultado = await servicoAuth.EntrarAsync(new ComandoLogin(req.Email, req.Senha, ip, userAgent));
+
+        DefinirCookieRefreshToken(resultado.RefreshToken);
+
         return Ok(new { token = resultado.Token, user = DtoUsuario.De(resultado.Usuario) });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Renovar()
+    {
+        var tokenBruto = Request.Cookies[NomeCookieRefreshToken];
+        if (string.IsNullOrEmpty(tokenBruto))
+            return Unauthorized(new { error = "Refresh token ausente" });
+
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        var resultado = await servicoAuth.RenovarSessaoAsync(tokenBruto, ip, userAgent);
+
+        DefinirCookieRefreshToken(resultado.RefreshToken);
+
+        return Ok(new { token = resultado.Token, user = DtoUsuario.De(resultado.Usuario) });
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        var tokenBruto = Request.Cookies[NomeCookieRefreshToken];
+        if (!string.IsNullOrEmpty(tokenBruto))
+            await servicoAuth.LogoutAsync(tokenBruto);
+
+        RemoverCookieRefreshToken();
+
+        return Ok(new { message = "Logout realizado com sucesso" });
     }
 
     [HttpGet("me")]
@@ -84,11 +131,37 @@ public class ControladorAuth(IServicoAutenticacao servicoAuth, IRepositorioBanki
 
         return Ok(new { banking = resultado });
     }
+
+    // ── Helpers de cookie ──────────────────────────────────────────────────────
+
+    private void DefinirCookieRefreshToken(string tokenBruto)
+    {
+        var opcoes = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTimeOffset.UtcNow.AddDays(30),
+            Path = "/api/auth",
+        };
+        Response.Cookies.Append(NomeCookieRefreshToken, tokenBruto, opcoes);
+    }
+
+    private void RemoverCookieRefreshToken()
+    {
+        Response.Cookies.Delete(NomeCookieRefreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/auth",
+        });
+    }
 }
 
 public record RequisicaoCadastro(
     string Nome, string Email, string Senha, string TipoConta,
-    string? Telefone = null, string? Especialidade = null, string? Cidade = null);
+    string? Telefone = null, string? Especialidade = null, Guid? CidadeId = null);
 
 public record RequisicaoLogin(string Email, string Senha);
 

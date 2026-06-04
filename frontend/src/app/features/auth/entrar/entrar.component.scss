@@ -114,6 +114,34 @@
   }
 }
 
+/* Campo senha com toggle */
+.campo-senha {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    padding-right: 2.75rem;
+  }
+}
+
+.btn-toggle-senha {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #f97316;
+  }
+}
+
 /* Botão submit */
 .btn-submit {
   width: 100%;

@@ -44,18 +44,18 @@
           @for (servico of servicos(); track servico.id) {
             <tr>
               <td>{{ servico.titulo }}</td>
-              <td>{{ servico.categoria }}</td>
+              <td>{{ servico.categoriaId }}</td>
               <td>R$ {{ servico.preco }}</td>
               <td>
                 <span class="badge badge-{{ servico.status }}">{{ rotularStatus(servico.status) }}</span>
               </td>
               <td>
-                @if (servico.status === 'pending_approval') {
-                  <button (click)="atualizarStatus(servico.id, 'in_progress')">Iniciar</button>
+                @if (servico.status === 'em_negociacao') {
+                  <button (click)="atualizarStatus(servico.id, 'em_andamento')">Iniciar</button>
                 }
-                @if (servico.status === 'in_progress') {
-                  <button (click)="atualizarStatus(servico.id, 'completed')">Concluir</button>
-                  <button class="btn-cancelar" (click)="atualizarStatus(servico.id, 'cancelled')">Cancelar</button>
+                @if (servico.status === 'em_andamento') {
+                  <button (click)="atualizarStatus(servico.id, 'concluido')">Concluir</button>
+                  <button class="btn-cancelar" (click)="atualizarStatus(servico.id, 'cancelado')">Cancelar</button>
                 }
               </td>
             </tr>

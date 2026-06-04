@@ -1,14 +1,52 @@
-﻿using System.Text;
+using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Prontto.Api.Middlewares;
-using Prontto.Infrastructure;
+using Prontto.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AdicionarInfraestrutura(builder.Configuration);
 
+// ── Swagger ────────────────────────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Prontto API",
+        Version = "v1",
+        Description = "Marketplace de serviços domésticos — API REST"
+    });
+
+    // Suporte a Bearer Token no Swagger UI
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Informe o Access Token JWT. Ex: eyJhbGci..."
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// ── JWT ────────────────────────────────────────────────────────────────────────
 var segredoJwt = builder.Configuration["SESSION_SECRET"] ?? "prontto-secret-dev";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
@@ -19,22 +57,63 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(segredoJwt)),
             ValidateIssuer = false,
             ValidateAudience = false,
+            // Access Token expira em 15 min; sem tolerância de relógio
             ClockSkew = TimeSpan.Zero,
         };
     });
 
 builder.Services.AddAuthorization();
 
+// ── Rate Limiting (Microsoft.AspNetCore.RateLimiting) ─────────────────────────
+builder.Services.AddRateLimiter(opcoes =>
+{
+    opcoes.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // POST /api/auth/login — 10 req/min por IP
+    opcoes.AddPolicy("login", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
+
+    // POST /api/auth/register — 5 req/min por IP
+    opcoes.AddPolicy("cadastro", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
+});
+
+// ── CORS ───────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(opt =>
     opt.AddDefaultPolicy(politica => politica
-        .WithOrigins("http://localhost:4200")
+        .WithOrigins("http://localhost:4200", "https://prontto.com.br")
         .AllowAnyHeader()
-        .AllowAnyMethod()));
+        .AllowAnyMethod()
+        .AllowCredentials())); // Necessário para cookies cross-origin em dev
 
 var app = builder.Build();
 
+app.UseSwagger();
+app.UseSwaggerUI(opt =>
+{
+    opt.SwaggerEndpoint("/swagger/v1/swagger.json", "Prontto API v1");
+    opt.RoutePrefix = "swagger";
+});
+
 app.UseMiddleware<MiddlewareExcecao>();
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -21,19 +21,23 @@ export class AuthService {
 
   entrar(email: string, senha: string) {
     return this.http
-      .post<RespostaAuth>(`${environment.apiUrl}/api/auth/login`, { email, password: senha })
+      .post<RespostaAuth>(`${environment.apiUrl}/api/auth/login`, { email, senha })
       .pipe(tap(resposta => this.salvarSessao(resposta)));
   }
 
   cadastrar(dados: {
     nome: string; email: string; senha: string;
-    tipoConta: string; telefone?: string; especialidade?: string; cidade?: string;
+    tipoConta: string; telefone?: string; especialidade?: string; cidadeId?: string;
   }) {
     return this.http
       .post<RespostaAuth>(`${environment.apiUrl}/api/auth/register`, {
-        name: dados.nome, email: dados.email, password: dados.senha,
-        accountType: dados.tipoConta, phone: dados.telefone,
-        specialty: dados.especialidade, city: dados.cidade,
+        nome: dados.nome,
+        email: dados.email,
+        senha: dados.senha,
+        tipoConta: dados.tipoConta,
+        telefone: dados.telefone,
+        especialidade: dados.especialidade,
+        cidadeId: dados.cidadeId,
       })
       .pipe(tap(resposta => this.salvarSessao(resposta)));
   }
@@ -65,14 +69,18 @@ export class AuthService {
   private mapearUsuario(dados: any): Usuario {
     return {
       id: dados.id,
-      nome: dados.name,
+      nome: dados.nome,
       email: dados.email,
-      telefone: dados.phone,
-      tipoConta: dados.accountType,
-      papel: dados.role,
-      especialidade: dados.specialty,
-      cidade: dados.city,
-      criadoEm: dados.createdAt,
+      telefone: dados.telefone,
+      tipoConta: dados.tipoConta,
+      papel: dados.papel,
+      especialidade: dados.especialidade,
+      cidadeId: dados.cidadeId,
+      fotoPerfilUrl: dados.fotoPerfilUrl,
+      slug: dados.slug,
+      mediaAvaliacoes: dados.mediaAvaliacoes ?? 0,
+      totalAvaliacoes: dados.totalAvaliacoes ?? 0,
+      criadoEm: dados.criadoEm,
     };
   }
 }

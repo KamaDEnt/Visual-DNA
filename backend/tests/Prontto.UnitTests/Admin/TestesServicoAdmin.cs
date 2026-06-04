@@ -90,7 +90,7 @@ public class TestesServicoAdmin
             new Usuario { TipoConta = TipoConta.Prestador },
         ]);
         _repositorioServicos.Setup(r => r.ContarTodosAsync()).ReturnsAsync(5);
-        _repositorioServicos.Setup(r => r.ContarPorStatusAsync(StatusServico.AguardandoAprovacao)).ReturnsAsync(2);
+        _repositorioServicos.Setup(r => r.ContarPorStatusAsync(StatusServico.EmNegociacao)).ReturnsAsync(2);
         _repositorioServicos.Setup(r => r.ContarPorStatusAsync(StatusServico.EmAndamento)).ReturnsAsync(1);
         _repositorioServicos.Setup(r => r.ContarPorStatusAsync(StatusServico.Concluido)).ReturnsAsync(2);
         _repositorioCobrancas.Setup(r => r.SomarTaxaAdminPorStatusAsync(StatusCobranca.Pago)).ReturnsAsync(40m);

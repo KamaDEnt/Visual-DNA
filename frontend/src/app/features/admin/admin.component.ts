@@ -51,10 +51,14 @@ export class AdminComponent implements OnInit {
 
   rotularStatus(status: StatusServico): string {
     const rotulos: Record<StatusServico, string> = {
-      pending_approval: 'Aguardando aprovação',
-      in_progress: 'Em andamento',
-      completed: 'Concluído',
-      cancelled: 'Cancelado',
+      em_negociacao: 'Em negociação',
+      aguardando_pagamento: 'Aguardando pagamento',
+      pago: 'Pago',
+      em_andamento: 'Em andamento',
+      aguardando_confirmacao_cliente: 'Aguardando confirmação',
+      em_disputa: 'Em disputa',
+      concluido: 'Concluído',
+      cancelado: 'Cancelado',
     };
     return rotulos[status];
   }
