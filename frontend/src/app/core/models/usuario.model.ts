@@ -38,15 +38,19 @@ export interface Servico {
   titulo: string;
   descricao?: string | null;
   categoriaId: string;
+  categoriaNome?: string | null;
   cidadeId?: string | null;
+  cidadeNome?: string | null;
   clienteId?: string | null;
+  clienteNome?: string | null;
   prestadorId?: string | null;
+  prestadorNome?: string | null;
   preco: number;
   taxaAdminPercentual: number;
   status: StatusServico;
   endereco?: string | null;
   agendadoEm?: string | null;
-  concluido?: string | null;
+  concluidoEm?: string | null;
   aguardandoConfirmacaoDesde?: string | null;
   criadoEm: string;
   atualizadoEm: string;
@@ -83,7 +87,7 @@ export interface Cobranca {
   pagarmePagamentoId?: string | null;
   pixQrCode?: string | null;
   pixCopiaCola?: string | null;
-  pixExpiraEm?: string | null;
+  pixExpiracaoEm?: string | null;
   pagoEm?: string | null;
   retidoEm?: string | null;
   liberadoEm?: string | null;
@@ -100,6 +104,7 @@ export interface MensagemServico {
   id: string;
   servicoId: string;
   remetenteId?: string | null;
+  remetenteNome?: string | null;
   papelRemetente: PapelRemetente;
   tipoMensagem: TipoMensagem;
   conteudo: string;
@@ -108,6 +113,20 @@ export interface MensagemServico {
   imagemModerada: boolean;
   imagemAprovada?: boolean | null;
   criadoEm: string;
+}
+
+export type StatusDisputa = 'aberta' | 'em_analise' | 'resolvida_cliente' | 'resolvida_prestador';
+
+export interface Disputa {
+  id: string;
+  servicoId: string;
+  abertaPorId: string;
+  motivo: string;
+  descricao?: string | null;
+  status: string;
+  decisaoAdmin?: string | null;
+  criadoEm: string;
+  resolvidoEm?: string | null;
 }
 
 export interface EstatisticasAdmin {

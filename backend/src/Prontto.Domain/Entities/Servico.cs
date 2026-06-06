@@ -8,8 +8,12 @@ public class Servico
     public string Titulo { get; set; } = string.Empty;
     public string? Descricao { get; set; }
 
-    // Legacy: string livre (será substituído por CategoriaId — FK para entidade Categoria)
-    public string Categoria { get; set; } = string.Empty;
+    // FK para entidade canônica Categoria (RF-04 RN-08)
+    public Guid CategoriaId { get; set; }
+    public Categoria? Categoria { get; set; }
+
+    public Guid? CidadeId { get; set; }
+    public Cidade? Cidade { get; set; }
 
     public Guid? ClienteId { get; set; }
     public Guid? PrestadorId { get; set; }
@@ -28,4 +32,5 @@ public class Servico
     public Usuario? Prestador { get; set; }
     public Cobranca? Cobranca { get; set; }
     public ICollection<MensagemServico> Mensagens { get; set; } = [];
+    public Disputa? Disputa { get; set; }
 }

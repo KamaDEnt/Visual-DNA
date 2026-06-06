@@ -35,6 +35,11 @@ public class MiddlewareExcecao(RequestDelegate proximo, ILogger<MiddlewareExceca
             ctx.Response.StatusCode = 400;
             await ctx.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
+        catch (ExcecaoTransicaoInvalida ex)
+        {
+            ctx.Response.StatusCode = 422;
+            await ctx.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro não tratado");

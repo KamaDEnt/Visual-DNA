@@ -10,4 +10,8 @@ public interface IRepositorioCobranca
     Task<decimal> SomarValorTotalPorStatusAsync(StatusCobranca status);
     Task<bool> ExistePorServicoAsync(Guid idServico);
     Task<Cobranca> AdicionarAsync(Cobranca cobranca);
+    Task<Cobranca> AtualizarAsync(Cobranca cobranca);
+    Task<Cobranca?> ObterPorServicoIdAsync(Guid servicoId);
+    Task<Cobranca?> ObterPorPagarmeOrderIdAsync(string pagarmeOrderId);
+    Task<List<Cobranca>> ListarPendentesExpiradosAsync();
 }

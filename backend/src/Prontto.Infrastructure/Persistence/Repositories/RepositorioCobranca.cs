@@ -33,4 +33,24 @@ public class RepositorioCobranca(ContextoBancoDados db) : IRepositorioCobranca
         await db.SaveChangesAsync();
         return cobranca;
     }
+
+    public async Task<Cobranca> AtualizarAsync(Cobranca cobranca)
+    {
+        db.Cobrancas.Update(cobranca);
+        await db.SaveChangesAsync();
+        return cobranca;
+    }
+
+    public Task<Cobranca?> ObterPorServicoIdAsync(Guid servicoId)
+        => db.Cobrancas.FirstOrDefaultAsync(c => c.ServicoId == servicoId);
+
+    public Task<Cobranca?> ObterPorPagarmeOrderIdAsync(string pagarmeOrderId)
+        => db.Cobrancas.FirstOrDefaultAsync(c => c.PagarmeOrderId == pagarmeOrderId);
+
+    public async Task<List<Cobranca>> ListarPendentesExpiradosAsync()
+        => await db.Cobrancas
+            .Where(c => c.Status == StatusCobranca.Pendente
+                     && c.PixExpiracaoEm != null
+                     && c.PixExpiracaoEm < DateTime.UtcNow)
+            .ToListAsync();
 }

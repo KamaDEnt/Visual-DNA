@@ -17,6 +17,9 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
     public DbSet<CategoriaUsuario> CategoriasUsuario => Set<CategoriaUsuario>();
     public DbSet<CidadeUsuario> CidadesUsuario => Set<CidadeUsuario>();
     public DbSet<ImagemPortfolio> ImagensPortfolio => Set<ImagemPortfolio>();
+    public DbSet<Disputa> Disputas => Set<Disputa>();
+    public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
+    public DbSet<AuditLog> LogsAuditoria => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,7 +115,8 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
             e.Property(s => s.Id).HasColumnName("id");
             e.Property(s => s.Titulo).HasColumnName("titulo");
             e.Property(s => s.Descricao).HasColumnName("descricao");
-            e.Property(s => s.Categoria).HasColumnName("categoria");
+            e.Property(s => s.CategoriaId).HasColumnName("categoria_id");
+            e.Property(s => s.CidadeId).HasColumnName("cidade_id");
             e.Property(s => s.ClienteId).HasColumnName("cliente_id");
             e.Property(s => s.PrestadorId).HasColumnName("prestador_id");
             e.Property(s => s.Preco).HasColumnName("preco").HasPrecision(10, 2);
@@ -137,6 +141,16 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
                 .WithMany(u => u.ServicosComoPrestador)
                 .HasForeignKey(s => s.PrestadorId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(s => s.Categoria)
+                .WithMany()
+                .HasForeignKey(s => s.CategoriaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(s => s.Cidade)
+                .WithMany()
+                .HasForeignKey(s => s.CidadeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ── MensagemServico ────────────────────────────────────────────────────
@@ -292,6 +306,88 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
                 .WithMany(u => u.ImagensPortfolio)
                 .HasForeignKey(i => i.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Disputa ────────────────────────────────────────────────────────────
+        modelBuilder.Entity<Disputa>(e =>
+        {
+            e.ToTable("disputas");
+
+            e.HasIndex(d => d.ServicoId).IsUnique();
+            e.HasIndex(d => d.Status);
+
+            e.Property(d => d.Id).HasColumnName("id");
+            e.Property(d => d.ServicoId).HasColumnName("servico_id");
+            e.Property(d => d.AbertaPorId).HasColumnName("aberto_por_id");
+            e.Property(d => d.Motivo).HasColumnName("motivo");
+            e.Property(d => d.Descricao).HasColumnName("descricao");
+            e.Property(d => d.Status).HasColumnName("status").HasConversion<string>();
+            e.Property(d => d.ResolvidaPorId).HasColumnName("resolvido_por_id");
+            e.Property(d => d.DecisaoAdmin).HasColumnName("decisao_admin");
+            e.Property(d => d.CriadoEm).HasColumnName("criado_em");
+            e.Property(d => d.ResolvidoEm).HasColumnName("resolvido_em");
+
+            e.HasOne(d => d.Servico)
+                .WithOne(s => s.Disputa)
+                .HasForeignKey<Disputa>(d => d.ServicoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(d => d.AbertaPor)
+                .WithMany()
+                .HasForeignKey(d => d.AbertaPorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(d => d.ResolvidaPor)
+                .WithMany()
+                .HasForeignKey(d => d.ResolvidaPorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── Notificacao ────────────────────────────────────────────────────────
+        modelBuilder.Entity<Notificacao>(e =>
+        {
+            e.ToTable("notificacoes");
+
+            e.HasIndex(n => new { n.UsuarioId, n.Lida, n.CriadoEm });
+
+            e.Property(n => n.Id).HasColumnName("id");
+            e.Property(n => n.UsuarioId).HasColumnName("usuario_id");
+            e.Property(n => n.Titulo).HasColumnName("titulo");
+            e.Property(n => n.Mensagem).HasColumnName("mensagem");
+            e.Property(n => n.Lida).HasColumnName("lido");
+            e.Property(n => n.Tipo).HasColumnName("tipo");
+            e.Property(n => n.ReferenciaId).HasColumnName("referencia_id");
+            e.Property(n => n.CriadoEm).HasColumnName("criado_em");
+
+            e.HasOne(n => n.Usuario)
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── AuditLog ───────────────────────────────────────────────────────────
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.ToTable("logs_auditoria");
+
+            e.HasIndex(a => new { a.UsuarioId, a.CriadoEm });
+            e.HasIndex(a => new { a.Entidade, a.EntidadeId });
+            e.HasIndex(a => a.CriadoEm);
+
+            e.Property(a => a.Id).HasColumnName("id");
+            e.Property(a => a.UsuarioId).HasColumnName("usuario_id");
+            e.Property(a => a.Acao).HasColumnName("acao");
+            e.Property(a => a.Entidade).HasColumnName("entidade");
+            e.Property(a => a.EntidadeId).HasColumnName("entidade_id");
+            e.Property(a => a.Ip).HasColumnName("endereco_ip");
+            e.Property(a => a.UserAgent).HasColumnName("user_agent");
+            e.Property(a => a.Detalhes).HasColumnName("detalhes");
+            e.Property(a => a.CriadoEm).HasColumnName("criado_em");
+
+            e.HasOne(a => a.Usuario)
+                .WithMany()
+                .HasForeignKey(a => a.UsuarioId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

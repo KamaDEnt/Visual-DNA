@@ -1,7 +1,8 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Prontto.Application.Admin;
+using Prontto.Application.Servicos;
 using Prontto.Domain.Enums;
 
 namespace Prontto.Api.Controllers;
@@ -9,7 +10,9 @@ namespace Prontto.Api.Controllers;
 [ApiController]
 [Route("api/admin")]
 [Authorize(Roles = "admin")]
-public class ControladorAdmin(IServicoAdmin admin) : ControllerBase
+public class ControladorAdmin(
+    IServicoAdmin admin,
+    IServicoDisputa servicoDisputa) : ControllerBase
 {
     [HttpGet("stats")]
     public async Task<IActionResult> Estatisticas() => Ok(await admin.ObterEstatisticasAsync());
@@ -59,7 +62,29 @@ public class ControladorAdmin(IServicoAdmin admin) : ControllerBase
         var cobrancas = await admin.ListarCobrancasAsync();
         return Ok(new { charges = cobrancas });
     }
+
+    // ── Disputas ───────────────────────────────────────────────────────────────
+
+    [HttpGet("disputas")]
+    public async Task<IActionResult> ListarDisputas()
+    {
+        var disputas = await servicoDisputa.ListarAbertasAsync();
+        return Ok(new { disputas });
+    }
+
+    [HttpPatch("disputas/{id:guid}/resolver")]
+    public async Task<IActionResult> ResolverDisputa(Guid id, [FromBody] RequisicaoResolverDisputa req)
+    {
+        var adminId = Guid.Parse(User.FindFirstValue("userId")!);
+
+        if (string.IsNullOrWhiteSpace(req.DecisaoAdmin))
+            return BadRequest(new { error = "A justificativa da decisão é obrigatória" });
+
+        var disputa = await servicoDisputa.ResolverDisputaAsync(id, adminId, req.FavorPrestador, req.DecisaoAdmin);
+        return Ok(new { disputa });
+    }
 }
 
 public record RequisicaoStatus(string Status);
 public record RequisicaoMensagem(string Conteudo);
+public record RequisicaoResolverDisputa(bool FavorPrestador, string DecisaoAdmin);
