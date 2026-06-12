@@ -21,7 +21,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: "Server=mysql;Database=prontto_dev;User=prontto;Password=prontto_dev;Port=3306;AllowPublicKeyRetrieval=true;SslMode=None;"
-      SESSION_SECRET: prontto-secret-dev
+      SESSION_SECRET: prontto-secret-dev-local-32chars!!
     ports:
       - "5259:8080"
     depends_on:

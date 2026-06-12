@@ -98,7 +98,7 @@ builder.Services.AddRateLimiter(opcoes =>
 // ── CORS ───────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(opt =>
     opt.AddDefaultPolicy(politica => politica
-        .WithOrigins("http://localhost:4200", "https://prontto.com.br")
+        .WithOrigins("http://localhost:4200", "https://prontto.org", "https://www.prontto.org")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials())); // Necessário para cookies cross-origin em dev
