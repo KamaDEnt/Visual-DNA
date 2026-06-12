@@ -69,6 +69,10 @@ docker-compose.override.yml
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# ── Seeders (bin/obj gerados) ─────────────────────────────────────────────────
+database/seeders/**/bin/
+database/seeders/**/obj/
+
 # ── Claude Code (memória interna dos agentes) ─────────────────────────────────
 .claude/
 */.claude/
