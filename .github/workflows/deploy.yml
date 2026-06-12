@@ -65,6 +65,8 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
           local-dir: ./frontend/dist/prontto/browser/
           server-dir: /public_html/
           dangerous-clean-slate: true
