@@ -20,6 +20,7 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
     public DbSet<Disputa> Disputas => Set<Disputa>();
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
     public DbSet<AuditLog> LogsAuditoria => Set<AuditLog>();
+    public DbSet<Avaliacao> Avaliacoes => Set<Avaliacao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -387,6 +388,39 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
                 .WithMany()
                 .HasForeignKey(a => a.UsuarioId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ── Avaliacao ──────────────────────────────────────────────────────────
+        modelBuilder.Entity<Avaliacao>(e =>
+        {
+            e.ToTable("avaliacoes");
+            e.HasKey(a => a.Id);
+
+            e.HasIndex(a => new { a.ServicoId, a.AvaliadorId }).IsUnique();
+            e.HasIndex(a => a.AvaliadoId);
+
+            e.Property(a => a.Id).HasColumnName("id");
+            e.Property(a => a.ServicoId).HasColumnName("service_id");
+            e.Property(a => a.AvaliadorId).HasColumnName("reviewer_id");
+            e.Property(a => a.AvaliadoId).HasColumnName("reviewed_id");
+            e.Property(a => a.Nota).HasColumnName("rating");
+            e.Property(a => a.Comentario).HasColumnName("comment");
+            e.Property(a => a.CriadoEm).HasColumnName("created_at");
+
+            e.HasOne(a => a.Servico)
+                .WithMany()
+                .HasForeignKey(a => a.ServicoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(a => a.Avaliador)
+                .WithMany()
+                .HasForeignKey(a => a.AvaliadorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(a => a.Avaliado)
+                .WithMany()
+                .HasForeignKey(a => a.AvaliadoId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

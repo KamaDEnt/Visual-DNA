@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Prontto.Application.Admin;
 using Prontto.Application.Auth;
+using Prontto.Application.Avaliacoes;
 using Prontto.Application.Common;
 using Prontto.Application.Financeiro;
 using Prontto.Application.Perfil;
@@ -38,6 +39,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<IRepositorioDisputa, RepositorioDisputa>();
         servicos.AddScoped<IRepositorioNotificacao, RepositorioNotificacao>();
         servicos.AddScoped<IRepositorioAuditLog, RepositorioAuditLog>();
+        servicos.AddScoped<IRepositorioAvaliacao, RepositorioAvaliacao>();
 
         // ── Serviços de Aplicação ─────────────────────────────────────────────
         servicos.AddScoped<IHashSenha, HashSenhaBcrypt>();
@@ -49,6 +51,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<IServicoNegociacao, ServicoNegociacao>();
         servicos.AddScoped<IServicoDisputa, ServicoDisputa>();
         servicos.AddScoped<IServicoFinanceiro, ServicoFinanceiro>();
+        servicos.AddScoped<IServicoAvaliacao, ServicoAvaliacao>();
 
         // ── Gateway de pagamento (Stub para desenvolvimento) ──────────────────
         servicos.AddScoped<IProcessadorPagamento, ProcessadorPagamentoStub>();

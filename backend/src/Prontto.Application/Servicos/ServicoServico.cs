@@ -208,7 +208,7 @@ public class ServicoServico(
             EntidadeId = servicoId.ToString(),
         });
 
-        // Notifica o prestador
+        // Notifica o prestador sobre pagamento liberado
         if (servico.PrestadorId.HasValue)
         {
             await repositorioNotificacoes.AdicionarAsync(new Notificacao
@@ -217,6 +217,31 @@ public class ServicoServico(
                 Titulo = "Conclusão confirmada",
                 Mensagem = $"O cliente confirmou a conclusão do serviço '{servico.Titulo}'. Pagamento liberado.",
                 Tipo = "pagamento",
+                ReferenciaId = servicoId.ToString()
+            });
+        }
+
+        // Notifica ambas as partes sobre a janela de avaliação
+        if (servico.ClienteId.HasValue)
+        {
+            await repositorioNotificacoes.AdicionarAsync(new Notificacao
+            {
+                UsuarioId = servico.ClienteId.Value,
+                Titulo = "Avalie o serviço",
+                Mensagem = "Seu serviço foi concluído. Você tem 30 dias para avaliar o serviço.",
+                Tipo = "avaliacao",
+                ReferenciaId = servicoId.ToString()
+            });
+        }
+
+        if (servico.PrestadorId.HasValue)
+        {
+            await repositorioNotificacoes.AdicionarAsync(new Notificacao
+            {
+                UsuarioId = servico.PrestadorId.Value,
+                Titulo = "Avalie o cliente",
+                Mensagem = "Seu serviço foi concluído. Você tem 30 dias para avaliar o serviço.",
+                Tipo = "avaliacao",
                 ReferenciaId = servicoId.ToString()
             });
         }
@@ -310,6 +335,31 @@ public class ServicoServico(
                     Titulo = "Serviço concluído automaticamente",
                     Mensagem = $"O serviço '{servico.Titulo}' foi concluído automaticamente. Pagamento liberado.",
                     Tipo = "pagamento",
+                    ReferenciaId = servico.Id.ToString()
+                });
+            }
+
+            // Notifica ambas as partes sobre a janela de avaliação
+            if (servico.ClienteId.HasValue)
+            {
+                await repositorioNotificacoes.AdicionarAsync(new Notificacao
+                {
+                    UsuarioId = servico.ClienteId.Value,
+                    Titulo = "Avalie o serviço",
+                    Mensagem = "Seu serviço foi concluído. Você tem 30 dias para avaliar o serviço.",
+                    Tipo = "avaliacao",
+                    ReferenciaId = servico.Id.ToString()
+                });
+            }
+
+            if (servico.PrestadorId.HasValue)
+            {
+                await repositorioNotificacoes.AdicionarAsync(new Notificacao
+                {
+                    UsuarioId = servico.PrestadorId.Value,
+                    Titulo = "Avalie o cliente",
+                    Mensagem = "Seu serviço foi concluído. Você tem 30 dias para avaliar o serviço.",
+                    Tipo = "avaliacao",
                     ReferenciaId = servico.Id.ToString()
                 });
             }
