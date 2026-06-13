@@ -1,3 +1,4 @@
+Options +FollowSymLinks
 DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
