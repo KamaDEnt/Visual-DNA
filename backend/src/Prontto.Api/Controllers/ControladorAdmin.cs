@@ -14,15 +14,59 @@ public class ControladorAdmin(
     IServicoAdmin admin,
     IServicoDisputa servicoDisputa) : ControllerBase
 {
+    private Guid IdAdmin => Guid.Parse(User.FindFirstValue("userId")!);
+
     [HttpGet("stats")]
     public async Task<IActionResult> Estatisticas() => Ok(await admin.ObterEstatisticasAsync());
 
+    // ── Usuários ──────────────────────────────────────────────────────────────
+
     [HttpGet("users")]
-    public async Task<IActionResult> Usuarios()
+    public async Task<IActionResult> Usuarios(
+        [FromQuery] string? tipoConta,
+        [FromQuery] Guid? cidadeId)
     {
-        var usuarios = await admin.ListarUsuariosAsync();
+        TipoConta? tipoContaFiltro = null;
+        if (!string.IsNullOrWhiteSpace(tipoConta))
+        {
+            if (!Enum.TryParse<TipoConta>(tipoConta, ignoreCase: true, out var tipoContaParsed))
+                return BadRequest(new { error = "tipoConta inválido. Use 'Cliente' ou 'Prestador'" });
+            tipoContaFiltro = tipoContaParsed;
+        }
+
+        var usuarios = await admin.ListarUsuariosAsync(tipoContaFiltro, cidadeId);
         return Ok(new { users = usuarios.Select(DtoUsuario.De) });
     }
+
+    [HttpGet("users/{id:guid}")]
+    public async Task<IActionResult> ObterUsuario(Guid id)
+    {
+        var usuario = await admin.ObterUsuarioPorIdAsync(id);
+        return Ok(new { user = DtoUsuario.De(usuario) });
+    }
+
+    [HttpPost("users/{id:guid}/bloquear")]
+    public async Task<IActionResult> BloquearUsuario(Guid id)
+    {
+        await admin.BloquearUsuarioAsync(id, IdAdmin);
+        return Ok(new { message = "Usuário bloqueado com sucesso" });
+    }
+
+    [HttpPost("users/{id:guid}/desbloquear")]
+    public async Task<IActionResult> DesbloquearUsuario(Guid id)
+    {
+        await admin.DesbloquearUsuarioAsync(id, IdAdmin);
+        return Ok(new { message = "Usuário desbloqueado com sucesso" });
+    }
+
+    [HttpPost("users/{id:guid}/revogar-sessoes")]
+    public async Task<IActionResult> RevogarSessoes(Guid id)
+    {
+        await admin.RevogarSessoesAsync(id, IdAdmin);
+        return Ok(new { message = "Sessões revogadas com sucesso" });
+    }
+
+    // ── Serviços ──────────────────────────────────────────────────────────────
 
     [HttpGet("services")]
     public async Task<IActionResult> Servicos()
@@ -51,10 +95,11 @@ public class ControladorAdmin(
     [HttpPost("services/{id:guid}/messages")]
     public async Task<IActionResult> EnviarMensagem(Guid id, [FromBody] RequisicaoMensagem req)
     {
-        var idRemetente = Guid.Parse(User.FindFirstValue("userId")!);
-        var mensagem = await admin.EnviarMensagemAsync(id, idRemetente, req.Conteudo);
+        var mensagem = await admin.EnviarMensagemAsync(id, IdAdmin, req.Conteudo);
         return StatusCode(201, new { message = mensagem });
     }
+
+    // ── Cobranças ─────────────────────────────────────────────────────────────
 
     [HttpGet("charges")]
     public async Task<IActionResult> Cobrancas()
@@ -63,7 +108,44 @@ public class ControladorAdmin(
         return Ok(new { charges = cobrancas });
     }
 
-    // ── Disputas ───────────────────────────────────────────────────────────────
+    // ── Financeiro ────────────────────────────────────────────────────────────
+
+    [HttpGet("financeiro")]
+    public async Task<IActionResult> Financeiro()
+    {
+        var extrato = await admin.ObterExtratoFinanceiroAsync();
+        return Ok(new
+        {
+            totalArrecadado = extrato.TotalArrecadado,
+            totalPendente = extrato.TotalPendente,
+            totalRetido = extrato.TotalRetido,
+            ultimasCobrancas = extrato.UltimasCobrancas,
+        });
+    }
+
+    // ── Audit Logs ────────────────────────────────────────────────────────────
+
+    [HttpGet("audit-logs")]
+    public async Task<IActionResult> AuditLogs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] Guid? usuarioId = null,
+        [FromQuery] string? entidade = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
+        var resultado = await admin.ListarLogsAsync(page, pageSize, usuarioId, entidade);
+        return Ok(new
+        {
+            total = resultado.Total,
+            pagina = resultado.Pagina,
+            tamanhoPagina = resultado.TamanhoPagina,
+            itens = resultado.Itens,
+        });
+    }
+
+    // ── Disputas ──────────────────────────────────────────────────────────────
 
     [HttpGet("disputas")]
     public async Task<IActionResult> ListarDisputas()
@@ -75,12 +157,10 @@ public class ControladorAdmin(
     [HttpPatch("disputas/{id:guid}/resolver")]
     public async Task<IActionResult> ResolverDisputa(Guid id, [FromBody] RequisicaoResolverDisputa req)
     {
-        var adminId = Guid.Parse(User.FindFirstValue("userId")!);
-
         if (string.IsNullOrWhiteSpace(req.DecisaoAdmin))
             return BadRequest(new { error = "A justificativa da decisão é obrigatória" });
 
-        var disputa = await servicoDisputa.ResolverDisputaAsync(id, adminId, req.FavorPrestador, req.DecisaoAdmin);
+        var disputa = await servicoDisputa.ResolverDisputaAsync(id, IdAdmin, req.FavorPrestador, req.DecisaoAdmin);
         return Ok(new { disputa });
     }
 }

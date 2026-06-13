@@ -48,8 +48,73 @@ public class ServicoAdmin(
         );
     }
 
-    public async Task<IReadOnlyList<Usuario>> ListarUsuariosAsync()
-        => await repositorioUsuarios.ListarNaoAdminsAsync();
+    public async Task<IReadOnlyList<Usuario>> ListarUsuariosAsync(TipoConta? tipoConta = null, Guid? cidadeId = null)
+        => await repositorioUsuarios.ListarNaoAdminsAsync(tipoConta, cidadeId);
+
+    public async Task<Usuario> ObterUsuarioPorIdAsync(Guid id)
+    {
+        var usuario = await repositorioUsuarios.ObterPorIdAsync(id)
+            ?? throw new ExcecaoNaoEncontrado("Usuário não encontrado");
+        return usuario;
+    }
+
+    public async Task BloquearUsuarioAsync(Guid id, Guid adminId)
+    {
+        var usuario = await repositorioUsuarios.ObterPorIdAsync(id)
+            ?? throw new ExcecaoNaoEncontrado("Usuário não encontrado");
+
+        if (usuario.Papel == Papel.Admin)
+            throw new ExcecaoConflito("Não é permitido bloquear um administrador");
+
+        usuario.DeletadoEm = DateTime.UtcNow;
+        usuario.AtualizadoEm = DateTime.UtcNow;
+        await repositorioUsuarios.AtualizarAsync(usuario);
+
+        await repositorioAuditLog.RegistrarAsync(new AuditLog
+        {
+            UsuarioId = adminId,
+            Acao = "admin.usuario.bloqueado",
+            Entidade = "Usuario",
+            EntidadeId = id.ToString(),
+            Detalhes = $"Usuário {usuario.Email} bloqueado pelo admin {adminId}",
+        });
+    }
+
+    public async Task DesbloquearUsuarioAsync(Guid id, Guid adminId)
+    {
+        var usuario = await repositorioUsuarios.ObterPorIdAsync(id)
+            ?? throw new ExcecaoNaoEncontrado("Usuário não encontrado");
+
+        usuario.DeletadoEm = null;
+        usuario.AtualizadoEm = DateTime.UtcNow;
+        await repositorioUsuarios.AtualizarAsync(usuario);
+
+        await repositorioAuditLog.RegistrarAsync(new AuditLog
+        {
+            UsuarioId = adminId,
+            Acao = "admin.usuario.desbloqueado",
+            Entidade = "Usuario",
+            EntidadeId = id.ToString(),
+            Detalhes = $"Usuário {usuario.Email} desbloqueado pelo admin {adminId}",
+        });
+    }
+
+    public async Task RevogarSessoesAsync(Guid id, Guid adminId)
+    {
+        var usuario = await repositorioUsuarios.ObterPorIdAsync(id)
+            ?? throw new ExcecaoNaoEncontrado("Usuário não encontrado");
+
+        await repositorioUsuarios.RevogarTodosTokensPorUsuarioAsync(id);
+
+        await repositorioAuditLog.RegistrarAsync(new AuditLog
+        {
+            UsuarioId = adminId,
+            Acao = "admin.usuario.sessoes_revogadas",
+            Entidade = "Usuario",
+            EntidadeId = id.ToString(),
+            Detalhes = $"Sessões do usuário {usuario.Email} revogadas pelo admin {adminId}",
+        });
+    }
 
     public async Task<IReadOnlyList<Servico>> ListarServicosAsync()
         => await repositorioServicos.ListarTodosAsync();
@@ -116,4 +181,22 @@ public class ServicoAdmin(
 
     public async Task<IReadOnlyList<Cobranca>> ListarCobrancasAsync()
         => await repositorioCobrancas.ListarTodosAsync();
+
+    public async Task<ResultadoPaginado<AuditLog>> ListarLogsAsync(
+        int pagina, int tamanhoPagina, Guid? usuarioId, string? entidade)
+    {
+        tamanhoPagina = Math.Min(tamanhoPagina, 100);
+        var (itens, total) = await repositorioAuditLog.ListarAsync(pagina, tamanhoPagina, usuarioId, entidade);
+        return new ResultadoPaginado<AuditLog>(itens, total, pagina, tamanhoPagina);
+    }
+
+    public async Task<ExtratoFinanceiro> ObterExtratoFinanceiroAsync()
+    {
+        var totalArrecadado = await repositorioCobrancas.SomarTaxaAdminPorStatusAsync(StatusCobranca.Liberado);
+        var totalPendente = await repositorioCobrancas.SomarTaxaAdminPorStatusAsync(StatusCobranca.Pendente);
+        var totalRetido = await repositorioCobrancas.SomarTaxaAdminPorStatusAsync(StatusCobranca.Retido);
+        var ultimasCobrancas = await repositorioCobrancas.ListarUltimasComDetalhesAsync(20);
+
+        return new ExtratoFinanceiro(totalArrecadado, totalPendente, totalRetido, ultimasCobrancas);
+    }
 }

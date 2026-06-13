@@ -14,6 +14,16 @@ public class RepositorioCobranca(ContextoBancoDados db) : IRepositorioCobranca
             .OrderByDescending(cobranca => cobranca.CriadoEm)
             .ToListAsync();
 
+    public async Task<IReadOnlyList<Cobranca>> ListarUltimasComDetalhesAsync(int quantidade)
+        => await db.Cobrancas
+            .Include(cobranca => cobranca.Servico)
+                .ThenInclude(servico => servico.Cliente)
+            .Include(cobranca => cobranca.Servico)
+                .ThenInclude(servico => servico.Prestador)
+            .OrderByDescending(cobranca => cobranca.CriadoEm)
+            .Take(quantidade)
+            .ToListAsync();
+
     public async Task<decimal> SomarTaxaAdminPorStatusAsync(StatusCobranca status)
         => await db.Cobrancas
             .Where(cobranca => cobranca.Status == status)

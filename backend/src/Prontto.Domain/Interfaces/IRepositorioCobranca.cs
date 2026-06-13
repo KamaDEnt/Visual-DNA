@@ -6,6 +6,7 @@ namespace Prontto.Domain.Interfaces;
 public interface IRepositorioCobranca
 {
     Task<IReadOnlyList<Cobranca>> ListarTodosAsync();
+    Task<IReadOnlyList<Cobranca>> ListarUltimasComDetalhesAsync(int quantidade);
     Task<decimal> SomarTaxaAdminPorStatusAsync(StatusCobranca status);
     Task<decimal> SomarValorTotalPorStatusAsync(StatusCobranca status);
     Task<bool> ExistePorServicoAsync(Guid idServico);

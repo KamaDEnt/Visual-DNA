@@ -15,7 +15,8 @@ public record DtoUsuario(
     string? Slug,
     decimal MediaAvaliacoes,
     int TotalAvaliacoes,
-    DateTime CriadoEm)
+    DateTime CriadoEm,
+    bool Bloqueado)
 {
     public static DtoUsuario De(Usuario u) => new(
         u.Id,
@@ -30,5 +31,6 @@ public record DtoUsuario(
         u.Slug,
         u.MediaAvaliacoes,
         u.TotalAvaliacoes,
-        u.CriadoEm);
+        u.CriadoEm,
+        u.DeletadoEm.HasValue);
 }

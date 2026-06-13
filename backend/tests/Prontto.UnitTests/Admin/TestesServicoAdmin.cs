@@ -92,7 +92,7 @@ public class TestesServicoAdmin
     [Fact]
     public async Task ObterEstatisticasAsync_RetornaAgregacaoCorreta()
     {
-        _repositorioUsuarios.Setup(r => r.ListarNaoAdminsAsync()).ReturnsAsync([
+        _repositorioUsuarios.Setup(r => r.ListarNaoAdminsAsync(null, null)).ReturnsAsync([
             new Usuario { TipoConta = TipoConta.Cliente },
             new Usuario { TipoConta = TipoConta.Prestador },
         ]);
@@ -112,5 +112,135 @@ public class TestesServicoAdmin
         stats.Servicos.Total.Should().Be(5);
         stats.Receita.Ganha.Should().Be(40m);
         stats.Receita.Gmv.Should().Be(200m);
+    }
+
+    // ── Novos testes ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListarUsuariosAsync_ComFiltroTipoConta_PropagaFiltro()
+    {
+        _repositorioUsuarios
+            .Setup(r => r.ListarNaoAdminsAsync(TipoConta.Prestador, null))
+            .ReturnsAsync([new Usuario { TipoConta = TipoConta.Prestador }]);
+
+        var resultado = await _sut.ListarUsuariosAsync(TipoConta.Prestador, null);
+
+        resultado.Should().HaveCount(1);
+        resultado[0].TipoConta.Should().Be(TipoConta.Prestador);
+        _repositorioUsuarios.Verify(r => r.ListarNaoAdminsAsync(TipoConta.Prestador, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task ObterUsuarioPorIdAsync_UsuarioExistente_RetornaUsuario()
+    {
+        var id = Guid.NewGuid();
+        var usuario = new Usuario { Id = id, Nome = "João" };
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(id)).ReturnsAsync(usuario);
+
+        var resultado = await _sut.ObterUsuarioPorIdAsync(id);
+
+        resultado.Id.Should().Be(id);
+        resultado.Nome.Should().Be("João");
+    }
+
+    [Fact]
+    public async Task ObterUsuarioPorIdAsync_UsuarioNaoEncontrado_LancaExcecaoNaoEncontrado()
+    {
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>())).ReturnsAsync((Usuario?)null);
+
+        await _sut.Invoking(s => s.ObterUsuarioPorIdAsync(Guid.NewGuid()))
+            .Should().ThrowAsync<ExcecaoNaoEncontrado>();
+    }
+
+    [Fact]
+    public async Task BloquearUsuarioAsync_UsuarioAdmin_LancaExcecaoConflito()
+    {
+        var id = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var usuario = new Usuario { Id = id, Papel = Papel.Admin };
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(id)).ReturnsAsync(usuario);
+
+        await _sut.Invoking(s => s.BloquearUsuarioAsync(id, adminId))
+            .Should().ThrowAsync<ExcecaoConflito>()
+            .WithMessage("*administrador*");
+    }
+
+    [Fact]
+    public async Task BloquearUsuarioAsync_UsuarioValido_PreencheDeletadoEmERegistraAuditLog()
+    {
+        var id = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var usuario = new Usuario { Id = id, Email = "user@test.com", Papel = Papel.Usuario };
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(id)).ReturnsAsync(usuario);
+        _repositorioUsuarios.Setup(r => r.AtualizarAsync(It.IsAny<Usuario>())).ReturnsAsync((Usuario u) => u);
+
+        await _sut.BloquearUsuarioAsync(id, adminId);
+
+        usuario.DeletadoEm.Should().NotBeNull();
+        _repositorioAuditLog.Verify(r => r.RegistrarAsync(It.Is<AuditLog>(
+            log => log.Acao == "admin.usuario.bloqueado" && log.EntidadeId == id.ToString()
+        )), Times.Once);
+    }
+
+    [Fact]
+    public async Task DesbloquearUsuarioAsync_UsuarioBloqueado_LimpaDeletadoEmERegistraAuditLog()
+    {
+        var id = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var usuario = new Usuario { Id = id, Email = "user@test.com", DeletadoEm = DateTime.UtcNow };
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(id)).ReturnsAsync(usuario);
+        _repositorioUsuarios.Setup(r => r.AtualizarAsync(It.IsAny<Usuario>())).ReturnsAsync((Usuario u) => u);
+
+        await _sut.DesbloquearUsuarioAsync(id, adminId);
+
+        usuario.DeletadoEm.Should().BeNull();
+        _repositorioAuditLog.Verify(r => r.RegistrarAsync(It.Is<AuditLog>(
+            log => log.Acao == "admin.usuario.desbloqueado" && log.EntidadeId == id.ToString()
+        )), Times.Once);
+    }
+
+    [Fact]
+    public async Task RevogarSessoesAsync_UsuarioExistente_RevokaTokensERegistraAuditLog()
+    {
+        var id = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var usuario = new Usuario { Id = id, Email = "user@test.com" };
+        _repositorioUsuarios.Setup(r => r.ObterPorIdAsync(id)).ReturnsAsync(usuario);
+        _repositorioUsuarios.Setup(r => r.RevogarTodosTokensPorUsuarioAsync(id)).Returns(Task.CompletedTask);
+
+        await _sut.RevogarSessoesAsync(id, adminId);
+
+        _repositorioUsuarios.Verify(r => r.RevogarTodosTokensPorUsuarioAsync(id), Times.Once);
+        _repositorioAuditLog.Verify(r => r.RegistrarAsync(It.Is<AuditLog>(
+            log => log.Acao == "admin.usuario.sessoes_revogadas" && log.EntidadeId == id.ToString()
+        )), Times.Once);
+    }
+
+    [Fact]
+    public async Task ListarLogsAsync_LimitaTamanhoPaginaA100()
+    {
+        _repositorioAuditLog
+            .Setup(r => r.ListarAsync(1, 100, null, null))
+            .ReturnsAsync((new List<AuditLog>().AsReadOnly() as IReadOnlyList<AuditLog>, 0));
+
+        var resultado = await _sut.ListarLogsAsync(1, 200, null, null);
+
+        resultado.TamanhoPagina.Should().Be(100);
+        _repositorioAuditLog.Verify(r => r.ListarAsync(1, 100, null, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task ObterExtratoFinanceiroAsync_RetornaSomasCorretas()
+    {
+        _repositorioCobrancas.Setup(r => r.SomarTaxaAdminPorStatusAsync(StatusCobranca.Liberado)).ReturnsAsync(500m);
+        _repositorioCobrancas.Setup(r => r.SomarTaxaAdminPorStatusAsync(StatusCobranca.Pendente)).ReturnsAsync(100m);
+        _repositorioCobrancas.Setup(r => r.SomarTaxaAdminPorStatusAsync(StatusCobranca.Retido)).ReturnsAsync(200m);
+        _repositorioCobrancas.Setup(r => r.ListarUltimasComDetalhesAsync(20)).ReturnsAsync([]);
+
+        var extrato = await _sut.ObterExtratoFinanceiroAsync();
+
+        extrato.TotalArrecadado.Should().Be(500m);
+        extrato.TotalPendente.Should().Be(100m);
+        extrato.TotalRetido.Should().Be(200m);
     }
 }
