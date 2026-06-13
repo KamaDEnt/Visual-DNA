@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { BankingService } from '../../core/api/banking.service';
 import { PerfilPrestadorService } from '../../core/api/perfil-prestador.service';
 import { ServicosService } from '../../core/api/servicos.service';
+import { AvaliacoesService } from '../../core/api/avaliacoes.service';
 import { DadosBancarios, Categoria, Cidade, Servico, StatusServico } from '../../core/models/usuario.model';
 
 interface TipoPix {
@@ -27,6 +28,7 @@ export class MinhaAreaComponent implements OnInit {
   private readonly bankingService = inject(BankingService);
   private readonly perfilService = inject(PerfilPrestadorService);
   private readonly servicosService = inject(ServicosService);
+  private readonly avaliacoesService = inject(AvaliacoesService);
 
   readonly usuario = this.auth.usuario;
   readonly dadosBancarios = signal<DadosBancarios | null>(null);
@@ -46,6 +48,22 @@ export class MinhaAreaComponent implements OnInit {
   readonly servicos = signal<Servico[]>([]);
   readonly carregandoServicos = signal(false);
   readonly erroServicos = signal<string | null>(null);
+
+  // ── Avaliações (RF-08) ───────────────────────────────────────────────────────
+  /** servicoId que está com o formulário de avaliação aberto (null = nenhum) */
+  readonly avaliacaoAberta = signal<string | null>(null);
+  /** nota selecionada no seletor de estrelas (0 = nenhuma) */
+  readonly notaSelecionada = signal(0);
+  /** nota em hover para preview visual */
+  readonly notaHover = signal(0);
+  /** texto do comentário em edição */
+  readonly comentarioTexto = signal('');
+  /** set de servicoIds já avaliados com sucesso nesta sessão */
+  readonly avaliacoesEnviadas = signal<Set<string>>(new Set());
+  /** flag de envio em progresso */
+  readonly enviandoAvaliacao = signal(false);
+  /** mensagem de erro por serviço */
+  readonly erroAvaliacao = signal<string | null>(null);
 
   readonly tiposPix: TipoPix[] = [
     { valor: 'cpf', label: 'CPF', icone: '🪪' },
@@ -228,4 +246,83 @@ export class MinhaAreaComponent implements OnInit {
   sair(): void {
     this.auth.sair();
   }
+
+  // ── Métodos de avaliação (RF-08) ─────────────────────────────────────────────
+
+  jaAvaliou(servicoId: string): boolean {
+    return this.avaliacoesEnviadas().has(servicoId);
+  }
+
+  abrirFormularioAvaliacao(servicoId: string): void {
+    this.avaliacaoAberta.set(servicoId);
+    this.notaSelecionada.set(0);
+    this.notaHover.set(0);
+    this.comentarioTexto.set('');
+    this.erroAvaliacao.set(null);
+  }
+
+  fecharFormularioAvaliacao(): void {
+    this.avaliacaoAberta.set(null);
+    this.notaSelecionada.set(0);
+    this.notaHover.set(0);
+    this.comentarioTexto.set('');
+    this.erroAvaliacao.set(null);
+  }
+
+  selecionarNota(nota: number): void {
+    this.notaSelecionada.set(nota);
+  }
+
+  definirHoverNota(nota: number): void {
+    this.notaHover.set(nota);
+  }
+
+  limparHoverNota(): void {
+    this.notaHover.set(0);
+  }
+
+  notaEfetiva(): number {
+    return this.notaHover() || this.notaSelecionada();
+  }
+
+  enviarAvaliacao(servicoId: string): void {
+    const nota = this.notaSelecionada();
+    if (nota < 1 || nota > 5) {
+      this.erroAvaliacao.set('Selecione uma nota de 1 a 5 estrelas.');
+      return;
+    }
+
+    this.enviandoAvaliacao.set(true);
+    this.erroAvaliacao.set(null);
+
+    const comentario = this.comentarioTexto().trim() || undefined;
+
+    this.avaliacoesService.registrar(servicoId, nota, comentario).subscribe({
+      next: () => {
+        const enviadas = new Set(this.avaliacoesEnviadas());
+        enviadas.add(servicoId);
+        this.avaliacoesEnviadas.set(enviadas);
+        this.enviandoAvaliacao.set(false);
+        this.avaliacaoAberta.set(null);
+        this.notaSelecionada.set(0);
+        this.comentarioTexto.set('');
+      },
+      error: (err) => {
+        this.enviandoAvaliacao.set(false);
+        if (err.status === 409) {
+          // Já avaliado — marcar como avaliado e fechar
+          const enviadas = new Set(this.avaliacoesEnviadas());
+          enviadas.add(servicoId);
+          this.avaliacoesEnviadas.set(enviadas);
+          this.avaliacaoAberta.set(null);
+        } else if (err.status === 403) {
+          this.erroAvaliacao.set('Você não tem permissão para avaliar este serviço.');
+        } else {
+          this.erroAvaliacao.set('Erro ao enviar avaliação. Tente novamente.');
+        }
+      },
+    });
+  }
+
+  readonly indicesEstrelas = [1, 2, 3, 4, 5] as const;
 }

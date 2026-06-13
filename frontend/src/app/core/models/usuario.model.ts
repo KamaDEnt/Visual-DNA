@@ -198,3 +198,21 @@ export interface ResultadoPaginado<T> {
   page: number;
   pageSize: number;
 }
+
+// ── Avaliações (RF-08) ────────────────────────────────────────────────────────
+
+export interface Avaliacao {
+  id: string;
+  servicoId: string;
+  nomeAvaliador: string;
+  nota: number;
+  comentario?: string;
+  criadoEm: string;
+}
+
+export interface ResultadoListaAvaliacoes {
+  items: Avaliacao[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
+}

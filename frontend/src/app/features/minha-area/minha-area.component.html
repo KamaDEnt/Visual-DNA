@@ -352,14 +352,114 @@
                       {{ servico.criadoEm | date:'dd/MM/yyyy' }}
                     </span>
                   </div>
-                  <a
-                    [routerLink]="['/minha-area/servico', servico.id]"
-                    class="btn-ver-detalhes"
-                    [attr.aria-label]="'Ver detalhes do serviço ' + servico.titulo"
-                  >
-                    Ver detalhes →
-                  </a>
+                  <div class="card-servico__acoes">
+                    <a
+                      [routerLink]="['/minha-area/servico', servico.id]"
+                      class="btn-ver-detalhes"
+                      [attr.aria-label]="'Ver detalhes do serviço ' + servico.titulo"
+                    >
+                      Ver detalhes →
+                    </a>
+                    <!-- Botão avaliar: exibido apenas para serviços concluídos de clientes -->
+                    @if (servico.status === 'concluido' && usuario()?.tipoConta === 'cliente') {
+                      @if (jaAvaliou(servico.id)) {
+                        <span class="avaliacao-enviada" aria-label="Avaliação enviada">
+                          <span aria-hidden="true">★</span> Avaliado
+                        </span>
+                      } @else {
+                        <button
+                          class="btn-avaliar"
+                          (click)="abrirFormularioAvaliacao(servico.id)"
+                          [attr.aria-label]="'Avaliar serviço ' + servico.titulo"
+                          [attr.aria-expanded]="avaliacaoAberta() === servico.id"
+                        >
+                          <span aria-hidden="true">★</span> Avaliar
+                        </button>
+                      }
+                    }
+                  </div>
                 </div>
+
+                <!-- Formulário inline de avaliação -->
+                @if (avaliacaoAberta() === servico.id) {
+                  <div class="form-avaliacao" role="region" aria-label="Formulário de avaliação">
+                    <div class="form-avaliacao__titulo">Como foi o serviço?</div>
+
+                    <!-- Seletor de estrelas -->
+                    <div
+                      class="estrelas-seletor"
+                      role="group"
+                      aria-label="Selecione uma nota de 1 a 5 estrelas"
+                    >
+                      @for (i of indicesEstrelas; track i) {
+                        <button
+                          type="button"
+                          class="estrela-btn"
+                          [class.ativa]="i <= notaEfetiva()"
+                          (click)="selecionarNota(i)"
+                          (mouseenter)="definirHoverNota(i)"
+                          (mouseleave)="limparHoverNota()"
+                          [attr.aria-label]="i + ' estrela' + (i > 1 ? 's' : '')"
+                          [attr.aria-pressed]="notaSelecionada() === i"
+                        >★</button>
+                      }
+                      @if (notaEfetiva() > 0) {
+                        <span class="estrelas-label" aria-live="polite">
+                          {{ notaEfetiva() }}/5
+                        </span>
+                      }
+                    </div>
+
+                    <!-- Comentário -->
+                    <div class="campo">
+                      <label class="campo__label" [for]="'comentario-' + servico.id">
+                        Comentário <span class="campo__opcional">(opcional)</span>
+                      </label>
+                      <textarea
+                        [id]="'comentario-' + servico.id"
+                        class="campo__textarea campo__textarea--sm"
+                        rows="3"
+                        placeholder="Descreva sua experiência com este serviço..."
+                        [value]="comentarioTexto()"
+                        (input)="comentarioTexto.set($any($event.target).value)"
+                        maxlength="1000"
+                      ></textarea>
+                    </div>
+
+                    <!-- Erro -->
+                    @if (erroAvaliacao()) {
+                      <div class="avaliacao-erro" role="alert" aria-live="assertive">
+                        <span aria-hidden="true">⚠</span> {{ erroAvaliacao() }}
+                      </div>
+                    }
+
+                    <!-- Ações -->
+                    <div class="form-avaliacao__acoes">
+                      <button
+                        type="button"
+                        class="btn-cancelar-avaliacao"
+                        (click)="fecharFormularioAvaliacao()"
+                        [disabled]="enviandoAvaliacao()"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-enviar-avaliacao"
+                        (click)="enviarAvaliacao(servico.id)"
+                        [disabled]="enviandoAvaliacao() || notaSelecionada() === 0"
+                      >
+                        @if (enviandoAvaliacao()) {
+                          <span class="spinner spinner--sm" aria-hidden="true"></span>
+                          Enviando...
+                        } @else {
+                          Enviar avaliação
+                        }
+                      </button>
+                    </div>
+                  </div>
+                }
+
               </li>
             }
           </ul>
