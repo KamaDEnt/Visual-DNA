@@ -45,16 +45,33 @@ export class PerfilPrestadorComponent implements OnInit {
     });
   }
 
+  readonly mensagemContratacao = signal<string | null>(null);
+
   contratar(): void {
     const usuario = this.auth.usuario();
+
     if (!usuario) {
       const returnUrl = this.router.url;
       this.router.navigate(['/entrar'], { queryParams: { returnUrl } });
       return;
     }
-    // Placeholder para RF-04 — criação de solicitação de serviço
-    // TODO: navegar para a tela de criação de serviço com o prestadorId pré-selecionado
-    alert('Funcionalidade disponível em breve (RF-04).');
+
+    if (usuario.tipoConta === 'prestador') {
+      this.mensagemContratacao.set('Prestadores não podem contratar serviços.');
+      setTimeout(() => this.mensagemContratacao.set(null), 4000);
+      return;
+    }
+
+    // Cliente — navega para criação de serviço com prestador pré-selecionado
+    const p = this.perfil();
+    if (!p) return;
+
+    this.router.navigate(['/servicos/novo'], {
+      queryParams: {
+        prestadorId: p.slug ?? p.id,
+        prestadorNome: encodeURIComponent(p.nome),
+      },
+    });
   }
 
   get estrelas(): number[] {

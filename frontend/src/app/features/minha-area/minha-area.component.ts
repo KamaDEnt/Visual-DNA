@@ -5,7 +5,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { BankingService } from '../../core/api/banking.service';
 import { PerfilPrestadorService } from '../../core/api/perfil-prestador.service';
-import { DadosBancarios, Categoria, Cidade } from '../../core/models/usuario.model';
+import { ServicosService } from '../../core/api/servicos.service';
+import { DadosBancarios, Categoria, Cidade, Servico, StatusServico } from '../../core/models/usuario.model';
 
 interface TipoPix {
   valor: string;
@@ -25,6 +26,7 @@ export class MinhaAreaComponent implements OnInit {
   readonly auth = inject(AuthService);
   private readonly bankingService = inject(BankingService);
   private readonly perfilService = inject(PerfilPrestadorService);
+  private readonly servicosService = inject(ServicosService);
 
   readonly usuario = this.auth.usuario;
   readonly dadosBancarios = signal<DadosBancarios | null>(null);
@@ -39,6 +41,11 @@ export class MinhaAreaComponent implements OnInit {
 
   // Aba ativa
   readonly abaAtiva = signal<'perfil' | 'banking' | 'servicos'>('perfil');
+
+  // Serviços do usuário
+  readonly servicos = signal<Servico[]>([]);
+  readonly carregandoServicos = signal(false);
+  readonly erroServicos = signal<string | null>(null);
 
   readonly tiposPix: TipoPix[] = [
     { valor: 'cpf', label: 'CPF', icone: '🪪' },
@@ -107,7 +114,44 @@ export class MinhaAreaComponent implements OnInit {
       });
     } else {
       this.abaAtiva.set('servicos');
+      this.carregarServicos();
     }
+  }
+
+  carregarServicos(): void {
+    this.carregandoServicos.set(true);
+    this.erroServicos.set(null);
+    this.servicosService.listarMeusServicos().subscribe({
+      next: (res) => {
+        this.servicos.set(res.servicos);
+        this.carregandoServicos.set(false);
+      },
+      error: () => {
+        this.erroServicos.set('Não foi possível carregar seus serviços. Tente novamente.');
+        this.carregandoServicos.set(false);
+      },
+    });
+  }
+
+  mudarAba(aba: 'perfil' | 'banking' | 'servicos'): void {
+    this.abaAtiva.set(aba);
+    if (aba === 'servicos' && this.servicos().length === 0 && !this.carregandoServicos()) {
+      this.carregarServicos();
+    }
+  }
+
+  badgeStatus(status: StatusServico): { texto: string; cor: string } {
+    const mapa: Record<StatusServico, { texto: string; cor: string }> = {
+      em_negociacao: { texto: 'Em negociação', cor: 'amarelo' },
+      aguardando_pagamento: { texto: 'Aguard. pagamento', cor: 'amarelo' },
+      pago: { texto: 'Pago', cor: 'azul' },
+      em_andamento: { texto: 'Em andamento', cor: 'roxo' },
+      aguardando_confirmacao_cliente: { texto: 'Aguard. confirmação', cor: 'laranja' },
+      em_disputa: { texto: 'Em disputa', cor: 'vermelho' },
+      concluido: { texto: 'Concluído', cor: 'verde' },
+      cancelado: { texto: 'Cancelado', cor: 'cinza' },
+    };
+    return mapa[status] ?? { texto: status, cor: 'cinza' };
   }
 
   salvarBanking(): void {

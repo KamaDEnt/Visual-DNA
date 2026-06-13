@@ -24,14 +24,14 @@
         <button
           class="sidebar__nav-item"
           [class.ativo]="abaAtiva() === 'perfil'"
-          (click)="abaAtiva.set('perfil')"
+          (click)="mudarAba('perfil')"
         >
           <span aria-hidden="true">👤</span> Perfil Público
         </button>
         <button
           class="sidebar__nav-item"
           [class.ativo]="abaAtiva() === 'banking'"
-          (click)="abaAtiva.set('banking')"
+          (click)="mudarAba('banking')"
         >
           <span aria-hidden="true">💳</span> Dados Bancários
         </button>
@@ -39,7 +39,7 @@
       <button
         class="sidebar__nav-item"
         [class.ativo]="abaAtiva() === 'servicos'"
-        (click)="abaAtiva.set('servicos')"
+        (click)="mudarAba('servicos')"
       >
         <span aria-hidden="true">📋</span>
         {{ usuario()?.tipoConta === 'prestador' ? 'Meus Serviços' : 'Meus Pedidos' }}
@@ -73,14 +73,14 @@
           [attr.aria-selected]="abaAtiva() === 'perfil'"
           class="aba-mobile"
           [class.ativo]="abaAtiva() === 'perfil'"
-          (click)="abaAtiva.set('perfil')"
+          (click)="mudarAba('perfil')"
         >Perfil</button>
         <button
           role="tab"
           [attr.aria-selected]="abaAtiva() === 'banking'"
           class="aba-mobile"
           [class.ativo]="abaAtiva() === 'banking'"
-          (click)="abaAtiva.set('banking')"
+          (click)="mudarAba('banking')"
         >Bancário</button>
       }
       <button
@@ -88,7 +88,7 @@
         [attr.aria-selected]="abaAtiva() === 'servicos'"
         class="aba-mobile"
         [class.ativo]="abaAtiva() === 'servicos'"
-        (click)="abaAtiva.set('servicos')"
+        (click)="mudarAba('servicos')"
       >{{ usuario()?.tipoConta === 'prestador' ? 'Serviços' : 'Pedidos' }}</button>
     </div>
 
@@ -257,17 +257,114 @@
     <!-- ABA: Serviços / Pedidos -->
     @if (abaAtiva() === 'servicos') {
       <section class="secao-card" aria-labelledby="titulo-servicos">
-        <div class="secao-card__header">
+        <div class="secao-card__header secao-card__header--com-acao">
           <h2 class="secao-card__titulo" id="titulo-servicos">
             {{ usuario()?.tipoConta === 'prestador' ? 'Meus Serviços' : 'Meus Pedidos' }}
           </h2>
+          @if (usuario()?.tipoConta === 'cliente') {
+            <a routerLink="/servicos/novo" class="btn-novo-servico">
+              <span aria-hidden="true">+</span> Solicitar serviço
+            </a>
+          }
         </div>
 
-        <div class="estado-vazio">
-          <div class="estado-vazio__icone" aria-hidden="true">📋</div>
-          <p class="estado-vazio__texto">Nenhum serviço encontrado ainda.</p>
-          <a routerLink="/servicos" class="btn-explorar">Explorar serviços</a>
-        </div>
+        <!-- Estado: carregando -->
+        @if (carregandoServicos()) {
+          <div class="lista-servicos-skeleton" aria-busy="true" aria-label="Carregando serviços">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="card-servico-skeleton">
+                <div class="skeleton skeleton-titulo"></div>
+                <div class="skeleton skeleton-subtitulo"></div>
+                <div class="skeleton skeleton-badge"></div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Estado: erro -->
+        @if (!carregandoServicos() && erroServicos()) {
+          <div class="estado-erro" role="alert">
+            <div class="estado-erro__icone" aria-hidden="true">😕</div>
+            <p class="estado-erro__texto">{{ erroServicos() }}</p>
+            <button class="btn-retentar" (click)="carregarServicos()">Tentar novamente</button>
+          </div>
+        }
+
+        <!-- Estado: vazio -->
+        @if (!carregandoServicos() && !erroServicos() && servicos().length === 0) {
+          <div class="estado-vazio">
+            <div class="estado-vazio__icone" aria-hidden="true">📋</div>
+            <p class="estado-vazio__texto">
+              @if (usuario()?.tipoConta === 'prestador') {
+                Nenhum serviço ainda. Aguarde que clientes entrem em contato.
+              } @else {
+                Você ainda não solicitou nenhum serviço.
+              }
+            </p>
+            @if (usuario()?.tipoConta === 'cliente') {
+              <a routerLink="/servicos" class="btn-explorar">
+                Encontrar prestadores
+              </a>
+            }
+          </div>
+        }
+
+        <!-- Lista de serviços -->
+        @if (!carregandoServicos() && !erroServicos() && servicos().length > 0) {
+          <ul class="lista-servicos" role="list" aria-label="Lista de serviços">
+            @for (servico of servicos(); track servico.id) {
+              <li class="card-servico" role="listitem">
+                <div class="card-servico__topo">
+                  <div class="card-servico__info">
+                    <h3 class="card-servico__titulo">{{ servico.titulo }}</h3>
+                    <p class="card-servico__meta">
+                      @if (usuario()?.tipoConta === 'cliente' && servico.prestadorNome) {
+                        <span class="card-servico__parte">
+                          <span aria-hidden="true">👷</span> {{ servico.prestadorNome }}
+                        </span>
+                      } @else if (usuario()?.tipoConta === 'prestador' && servico.clienteNome) {
+                        <span class="card-servico__parte">
+                          <span aria-hidden="true">👤</span> {{ servico.clienteNome }}
+                        </span>
+                      }
+                      @if (servico.categoriaNome) {
+                        <span class="card-servico__categoria">{{ servico.categoriaNome }}</span>
+                      }
+                    </p>
+                  </div>
+                  <span
+                    class="badge-status"
+                    [class]="'badge-status--' + badgeStatus(servico.status).cor"
+                    aria-label="Status: {{ badgeStatus(servico.status).texto }}"
+                  >
+                    {{ badgeStatus(servico.status).texto }}
+                  </span>
+                </div>
+
+                <div class="card-servico__rodape">
+                  <div class="card-servico__dados">
+                    @if (servico.preco > 0) {
+                      <span class="card-servico__preco">
+                        {{ servico.preco | currency:'BRL':'symbol':'1.2-2' }}
+                      </span>
+                    }
+                    <span class="card-servico__data">
+                      {{ servico.criadoEm | date:'dd/MM/yyyy' }}
+                    </span>
+                  </div>
+                  <a
+                    [routerLink]="['/minha-area/servico', servico.id]"
+                    class="btn-ver-detalhes"
+                    [attr.aria-label]="'Ver detalhes do serviço ' + servico.titulo"
+                  >
+                    Ver detalhes →
+                  </a>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+
       </section>
     }
 

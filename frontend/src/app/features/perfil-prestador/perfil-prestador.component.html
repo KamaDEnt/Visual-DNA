@@ -77,6 +77,13 @@
           </div>
         }
 
+        <!-- Mensagem para prestadores tentando contratar -->
+        @if (mensagemContratacao()) {
+          <div class="aviso-contratacao" role="alert" aria-live="assertive">
+            <span aria-hidden="true">⚠</span> {{ mensagemContratacao() }}
+          </div>
+        }
+
         <!-- Botão contratar (desktop) -->
         <div class="perfil-acoes">
           <button class="btn-contratar" (click)="contratar()">

@@ -9,6 +9,14 @@ export const routes: Routes = [
       import('./features/home/home.component').then(m => m.HomeComponent),
   },
   {
+    path: 'servicos/novo',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/servicos/criar-servico/criar-servico.component').then(
+        m => m.CriarServicoComponent,
+      ),
+  },
+  {
     path: 'servicos',
     loadComponent: () =>
       import('./features/servicos/servicos.component').then(m => m.ServicosComponent),
