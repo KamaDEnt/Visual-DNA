@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Prontto.Application.Admin;
 using Prontto.Application.Auth;
 using Prontto.Application.Avaliacoes;
@@ -18,7 +20,7 @@ namespace Prontto.Infrastructure.DependencyInjection;
 public static class InjecaoDependencias
 {
     public static IServiceCollection AdicionarInfraestrutura(
-        this IServiceCollection servicos, IConfiguration configuracao)
+        this IServiceCollection servicos, IConfiguration configuracao, IHostEnvironment env)
     {
         var connectionString = configuracao.GetConnectionString("Default")
             ?? throw new InvalidOperationException("Connection string 'Default' não configurada.");
@@ -53,8 +55,22 @@ public static class InjecaoDependencias
         servicos.AddScoped<IServicoFinanceiro, ServicoFinanceiro>();
         servicos.AddScoped<IServicoAvaliacao, ServicoAvaliacao>();
 
-        // ── Gateway de pagamento (Stub para desenvolvimento) ──────────────────
-        servicos.AddScoped<IProcessadorPagamento, ProcessadorPagamentoStub>();
+        // ── Gateway de pagamento ──────────────────────────────────────────────
+        // Em desenvolvimento usa stub local; em produção usa Pagar.me real
+        if (env.IsDevelopment())
+        {
+            servicos.AddScoped<IProcessadorPagamento, ProcessadorPagamentoStub>();
+        }
+        else
+        {
+            servicos.AddHttpClient("pagarme", c =>
+            {
+                c.BaseAddress = new Uri("https://api.pagar.me/core/v5/");
+                c.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+            });
+            servicos.AddScoped<IProcessadorPagamento, ProcessadorPagamentoPagarme>();
+        }
 
         // ── Jobs ──────────────────────────────────────────────────────────────
         servicos.AddHostedService<JobConclusaoAutomatica>();

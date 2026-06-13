@@ -14,6 +14,7 @@ public class DadosBancarios
     public string? Agencia { get; set; }
     public string? NumeroConta { get; set; }
     public string? TipoConta { get; set; }
+    public string? PagarmeRecipientId { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
     public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
 

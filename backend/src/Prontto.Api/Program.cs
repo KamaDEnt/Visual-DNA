@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
-builder.Services.AdicionarInfraestrutura(builder.Configuration);
+builder.Services.AdicionarInfraestrutura(builder.Configuration, builder.Environment);
 
 // ── Swagger ────────────────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();

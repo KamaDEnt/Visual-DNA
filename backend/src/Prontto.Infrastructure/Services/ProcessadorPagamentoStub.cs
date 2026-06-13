@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Logging;
+using Prontto.Domain.Entities;
 using Prontto.Domain.Interfaces;
 
 namespace Prontto.Infrastructure.Services;
 
 /// <summary>
 /// Stub do IProcessadorPagamento para desenvolvimento.
-/// Substitua por ProcessadorPagamentoPagarme quando as credenciais estiverem disponíveis.
+/// Substitua por ProcessadorPagamentoPagarme em produção (configurado via IWebHostEnvironment em InjecaoDependencias).
 /// </summary>
 public class ProcessadorPagamentoStub(ILogger<ProcessadorPagamentoStub> logger) : IProcessadorPagamento
 {
@@ -35,5 +36,13 @@ public class ProcessadorPagamentoStub(ILogger<ProcessadorPagamentoStub> logger) 
         logger.LogInformation("[STUB] Reembolso: OrderId={OrderId}, Valor={Valor}, Ref={Referencia}",
             pagarmeOrderId, valor, referencia);
         return Task.CompletedTask;
+    }
+
+    public Task<string> CriarRecipientAsync(DadosBancarios dados, string nomeCompleto)
+    {
+        var recipientId = $"re_stub_{Guid.NewGuid():N}"[..20];
+        logger.LogInformation("[STUB] Recipient criado: RecipientId={RecipientId}, Usuario={UsuarioId}",
+            recipientId, dados.UsuarioId);
+        return Task.FromResult(recipientId);
     }
 }

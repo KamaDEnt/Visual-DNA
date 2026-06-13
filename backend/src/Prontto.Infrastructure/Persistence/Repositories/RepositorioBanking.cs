@@ -29,6 +29,8 @@ public class RepositorioBanking(ContextoBancoDados db) : IRepositorioBanking
             existente.Agencia = dadosBancarios.Agencia;
             existente.NumeroConta = dadosBancarios.NumeroConta;
             existente.TipoConta = dadosBancarios.TipoConta;
+            if (dadosBancarios.PagarmeRecipientId != null)
+                existente.PagarmeRecipientId = dadosBancarios.PagarmeRecipientId;
             existente.AtualizadoEm = DateTime.UtcNow;
             dadosBancarios = existente;
         }

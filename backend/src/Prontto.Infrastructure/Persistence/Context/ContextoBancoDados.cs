@@ -94,6 +94,7 @@ public class ContextoBancoDados(DbContextOptions<ContextoBancoDados> opcoes) : D
             e.Property(b => b.Agencia).HasColumnName("agencia");
             e.Property(b => b.NumeroConta).HasColumnName("numero_conta");
             e.Property(b => b.TipoConta).HasColumnName("tipo_conta");
+            e.Property(b => b.PagarmeRecipientId).HasColumnName("pagarme_recipient_id").HasMaxLength(50).IsRequired(false);
             e.Property(b => b.CriadoEm).HasColumnName("criado_em");
             e.Property(b => b.AtualizadoEm).HasColumnName("atualizado_em");
 

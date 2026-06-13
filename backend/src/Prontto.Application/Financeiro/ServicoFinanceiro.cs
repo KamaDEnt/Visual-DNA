@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Prontto.Application.Common;
@@ -21,11 +22,15 @@ public class ServicoFinanceiro(
 {
     private const int MaxRetries = 3;
 
+    // Tipos de evento suportados pelo Pagar.me que indicam pagamento confirmado
+    private static readonly HashSet<string> EventosPagamentoConfirmado =
+        new(StringComparer.OrdinalIgnoreCase) { "order.paid", "charge.paid" };
+
     // ── Gerar PIX ──────────────────────────────────────────────────────────────
 
-    public async Task<DtoCobranca> GerarPixAsync(Guid cobrancaId)
+    public async Task<DtoCobranca> GerarPixAsync(Guid servicoId)
     {
-        var cobranca = await repositorioCobrancas.ObterPorServicoIdAsync(cobrancaId)
+        var cobranca = await repositorioCobrancas.ObterPorServicoIdAsync(servicoId)
             ?? throw new ExcecaoNaoEncontrado("Cobrança não encontrada");
 
         if (cobranca.Status != StatusCobranca.Pendente)
@@ -58,13 +63,45 @@ public class ServicoFinanceiro(
         if (!ValidarHmac(payload, assinaturaHmac, segredo))
             throw new ExcecaoNaoAutorizado("Assinatura HMAC inválida");
 
-        // Extrai PagarmeOrderId do payload (JSON simples — sem System.Text.Json dependency no Application)
-        var orderId = ExtrairValorJson(payload, "order_id")
-                   ?? ExtrairValorJson(payload, "id");
+        // Deserializar payload com System.Text.Json
+        string? tipoEvento = null;
+        string? orderId = null;
+        string? chargeId = null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(payload);
+            var root = doc.RootElement;
+
+            tipoEvento = root.TryGetProperty("type", out var tp) ? tp.GetString() : null;
+
+            if (root.TryGetProperty("data", out var data))
+            {
+                orderId = data.TryGetProperty("id", out var oid) ? oid.GetString() : null;
+
+                if (data.TryGetProperty("charges", out var charges) && charges.ValueKind == JsonValueKind.Array
+                    && charges.GetArrayLength() > 0)
+                {
+                    chargeId = charges[0].TryGetProperty("id", out var cid) ? cid.GetString() : null;
+                }
+            }
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Webhook: payload JSON inválido — ignorando");
+            return;
+        }
+
+        // Filtrar: apenas eventos de pagamento confirmado
+        if (string.IsNullOrWhiteSpace(tipoEvento) || !EventosPagamentoConfirmado.Contains(tipoEvento))
+        {
+            logger.LogInformation("Webhook: evento '{Tipo}' ignorado (não é confirmação de pagamento)", tipoEvento);
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(orderId))
         {
-            logger.LogWarning("Webhook recebido sem order_id reconhecível");
+            logger.LogWarning("Webhook recebido sem order_id reconhecível. Tipo={Tipo}", tipoEvento);
             return;
         }
 
@@ -82,11 +119,9 @@ public class ServicoFinanceiro(
             return;
         }
 
-        var pagamentoId = ExtrairValorJson(payload, "payment_id") ?? ExtrairValorJson(payload, "id");
-
         // Pendente → Pago → Retido (imediato)
         cobranca.Status = StatusCobranca.Retido;
-        cobranca.PagarmePagamentoId = pagamentoId;
+        cobranca.PagarmePagamentoId = chargeId ?? orderId;
         cobranca.PagadoEm = DateTime.UtcNow;
         cobranca.RetidoEm = DateTime.UtcNow;
         cobranca.AtualizadoEm = DateTime.UtcNow;
@@ -260,23 +295,6 @@ public class ServicoFinanceiro(
         return CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(computado),
             Encoding.UTF8.GetBytes(hash.ToLowerInvariant()));
-    }
-
-    private static string? ExtrairValorJson(string json, string chave)
-    {
-        var marcador = $"\"{chave}\"";
-        var idx = json.IndexOf(marcador, StringComparison.OrdinalIgnoreCase);
-        if (idx < 0) return null;
-        idx += marcador.Length;
-        while (idx < json.Length && (json[idx] == ' ' || json[idx] == ':')) idx++;
-        if (idx >= json.Length) return null;
-        if (json[idx] == '"')
-        {
-            var fim = json.IndexOf('"', idx + 1);
-            return fim < 0 ? null : json[(idx + 1)..fim];
-        }
-        var fimNum = json.IndexOfAny([',', '}', ']', ' ', '\n', '\r'], idx);
-        return fimNum < 0 ? json[idx..] : json[idx..fimNum];
     }
 
     internal static DtoCobranca MapearDto(Domain.Entities.Cobranca c) => new(

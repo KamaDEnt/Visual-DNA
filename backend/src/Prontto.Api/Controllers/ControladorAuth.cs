@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using Prontto.Application.Auth;
 using Prontto.Application.Common;
 using Prontto.Application.Perfil;
@@ -17,7 +18,10 @@ public class ControladorAuth(
     IServicoAutenticacao servicoAuth,
     IRepositorioBanking banking,
     IServicoPerfilPrestador servicoPerfil,
-    IRepositorioPerfilPrestador repositorioPerfil) : ControllerBase
+    IRepositorioPerfilPrestador repositorioPerfil,
+    IProcessadorPagamento processadorPagamento,
+    IRepositorioUsuario repositorioUsuario,
+    ILogger<ControladorAuth> logger) : ControllerBase
 {
     private const string NomeCookieRefreshToken = "prontto_refresh_token";
 
@@ -122,7 +126,7 @@ public class ControladorAuth(
             return BadRequest(new { error = "Tipo de chave Pix inválido" });
 
         var idUsuario = Guid.Parse(User.FindFirstValue("userId")!);
-        var resultado = await banking.SalvarAsync(new Prontto.Domain.Entities.DadosBancarios
+        var dadosBancarios = new Prontto.Domain.Entities.DadosBancarios
         {
             UsuarioId = idUsuario,
             TipoChavePix = tipoChavePix,
@@ -133,7 +137,31 @@ public class ControladorAuth(
             Agencia = req.Agencia?.Trim(),
             NumeroConta = req.NumeroConta?.Trim(),
             TipoConta = req.TipoConta,
-        });
+        };
+
+        var resultado = await banking.SalvarAsync(dadosBancarios);
+
+        // Criar recipient no gateway de pagamento para split automático
+        // Não falhar o salvamento se a criação do recipient falhar
+        if (string.IsNullOrWhiteSpace(resultado.PagarmeRecipientId))
+        {
+            try
+            {
+                var usuario = await repositorioUsuario.ObterPorIdAsync(idUsuario);
+                var nomeCompleto = usuario?.Nome ?? req.NomeCompleto.Trim();
+                var recipientId = await processadorPagamento.CriarRecipientAsync(resultado, nomeCompleto);
+                resultado.PagarmeRecipientId = recipientId;
+                await banking.SalvarAsync(resultado);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Falha ao criar recipient no gateway de pagamento para usuario {UsuarioId}. " +
+                    "Dados bancários foram salvos — recipient pode ser criado manualmente.",
+                    idUsuario);
+                // Não relança — o prestador ainda pode operar sem o recipient
+            }
+        }
 
         return Ok(new { banking = resultado });
     }

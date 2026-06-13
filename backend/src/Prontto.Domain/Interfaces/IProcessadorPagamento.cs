@@ -1,3 +1,5 @@
+using Prontto.Domain.Entities;
+
 namespace Prontto.Domain.Interfaces;
 
 /// <summary>
@@ -14,6 +16,12 @@ public interface IProcessadorPagamento
 
     /// <summary>Reembolsa 100% do valor ao Cliente (cancelamento ou disputa favorável ao Cliente).</summary>
     Task ReembolsarAsync(string pagarmeOrderId, decimal valor, string referencia);
+
+    /// <summary>
+    /// Cria um recipient no gateway de pagamento para o prestador receber splits automáticos.
+    /// Retorna o recipientId (ex: "re_xxxx...").
+    /// </summary>
+    Task<string> CriarRecipientAsync(DadosBancarios dados, string nomeCompleto);
 }
 
 public record ResultadoPix(
