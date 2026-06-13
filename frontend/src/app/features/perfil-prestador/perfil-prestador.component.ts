@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PerfilPrestadorService } from '../../core/api/perfil-prestador.service';
+import { AvaliacoesService } from '../../core/api/avaliacoes.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { PerfilPublico } from '../../core/models/usuario.model';
+import { Avaliacao, PerfilPublico } from '../../core/models/usuario.model';
 
 @Component({
   selector: 'app-perfil-prestador',
@@ -16,11 +17,25 @@ export class PerfilPrestadorComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly perfilService = inject(PerfilPrestadorService);
+  private readonly avaliacoesService = inject(AvaliacoesService);
   readonly auth = inject(AuthService);
 
   readonly perfil = signal<PerfilPublico | null>(null);
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
+
+  // ── Avaliações (RF-08) ───────────────────────────────────────────────────────
+  readonly avaliacoes = signal<Avaliacao[]>([]);
+  readonly carregandoAvaliacoes = signal(false);
+  readonly paginaAvaliacoes = signal(1);
+  readonly totalAvaliacoes = signal(0);
+  readonly totalPaginasAvaliacoes = signal(0);
+
+  readonly temMaisAvaliacoes = computed(
+    () => this.paginaAvaliacoes() < this.totalPaginasAvaliacoes()
+  );
+
+  private slugAtual = '';
 
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug');
@@ -29,10 +44,13 @@ export class PerfilPrestadorComponent implements OnInit {
       return;
     }
 
+    this.slugAtual = slug;
+
     this.perfilService.obterPerfilPublico(slug).subscribe({
       next: (dados) => {
         this.perfil.set(dados);
         this.carregando.set(false);
+        this.carregarAvaliacoes();
       },
       error: (err) => {
         this.carregando.set(false);
@@ -43,6 +61,34 @@ export class PerfilPrestadorComponent implements OnInit {
         }
       },
     });
+  }
+
+  carregarAvaliacoes(): void {
+    if (this.carregandoAvaliacoes()) return;
+    this.carregandoAvaliacoes.set(true);
+
+    this.avaliacoesService
+      .listarPorPrestador(this.slugAtual, this.paginaAvaliacoes(), 10)
+      .subscribe({
+        next: (res) => {
+          if (this.paginaAvaliacoes() === 1) {
+            this.avaliacoes.set(res.items);
+          } else {
+            this.avaliacoes.update((atual) => [...atual, ...res.items]);
+          }
+          this.totalAvaliacoes.set(res.total);
+          this.totalPaginasAvaliacoes.set(res.totalPaginas);
+          this.carregandoAvaliacoes.set(false);
+        },
+        error: () => {
+          this.carregandoAvaliacoes.set(false);
+        },
+      });
+  }
+
+  verMaisAvaliacoes(): void {
+    this.paginaAvaliacoes.update((p) => p + 1);
+    this.carregarAvaliacoes();
   }
 
   readonly mensagemContratacao = signal<string | null>(null);
@@ -75,11 +121,27 @@ export class PerfilPrestadorComponent implements OnInit {
   }
 
   get estrelas(): number[] {
-    const media = Math.round(this.perfil()?.mediaAvaliacoes ?? 0);
     return Array.from({ length: 5 }, (_, i) => i + 1);
   }
 
   estralaAtiva(index: number): boolean {
     return index <= Math.round(this.perfil()?.mediaAvaliacoes ?? 0);
+  }
+
+  estrelasAvaliacao(nota: number): number[] {
+    return Array.from({ length: 5 }, (_, i) => i + 1);
+  }
+
+  estrelaAvaliacaoAtiva(index: number, nota: number): boolean {
+    return index <= nota;
+  }
+
+  formatarData(dataIso: string): string {
+    const d = new Date(dataIso);
+    return d.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 }
